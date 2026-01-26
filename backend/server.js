@@ -1,16 +1,18 @@
 import express from 'express'
 import { createClient } from '@supabase/supabase-js'
 import cors from 'cors'
-import 'dotenv/config';
-
-console.log('URL:', process.env.SUPABASE_URL);
-console.log('KEY:', process.env.SUPABASE_KEY);
+import 'dotenv/config'
 
 const app = express()
 const PORT = process.env.PORT || 3000
 
 // Enable CORS for frontend
-app.use(cors())
+app.use(cors({
+  origin: [
+    'https://ask-botanique-platform-1.onrender.com',
+    'http://localhost:3000'
+  ]
+}))
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -113,7 +115,6 @@ app.get('/plants', async (req, res) => {
     const { data, error } = await query
 
     if (error) return res.status(500).json(error)
-
     res.json(data)
   } catch (err) {
     res.status(500).json({ error: err.message })
