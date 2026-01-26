@@ -1,8 +1,19 @@
 import express from 'express'
 import { createClient } from '@supabase/supabase-js'
+import cors from 'cors'
+
+const cors = require('cors');
+
+app.use(cors({
+  origin: [
+    'https://ask-botanique-platform-1.onrender.com',
+    'http://localhost:3000'  // for local development
+  ]
+}));
 
 const app = express()
 const PORT = 3000
+
 
 const supabase = createClient(
   'https://oedryzbpdmaobqcrqrkk.supabase.co',
