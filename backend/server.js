@@ -1,18 +1,16 @@
 import express from 'express'
 import { createClient } from '@supabase/supabase-js'
 import cors from 'cors'
-import 'dotenv/config'
+import 'dotenv/config';
+
+import { calculateSuitability } from './utils/plantScoring.js';
+
 
 const app = express()
 const PORT = process.env.PORT || 3000
 
 // Enable CORS for frontend
-app.use(cors({
-  origin: [
-    'https://ask-botanique-platform-1.onrender.com',
-    'http://localhost:3000'
-  ]
-}))
+app.use(cors())
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -115,11 +113,93 @@ app.get('/plants', async (req, res) => {
     const { data, error } = await query
 
     if (error) return res.status(500).json(error)
+
     res.json(data)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
+
+// RECOMMENDATION ENGINE ENDPOINT
+app.get('/api/recommend', async (req, res) => {
+  try {
+    const { rainfall, soil_type, sunlight, category } = req.query;
+
+    // Validation
+    if (!rainfall || !soil_type || !sunlight) {
+      return res.status(400).json({ 
+        error: 'Missing required parameters: rainfall, soil_type, sunlight' 
+      });
+    }
+
+    // Build query
+    let query = supabase
+      .from('plants')
+      .select(`
+        *,
+        plant_categories(name)
+      `);
+
+    // Optional: filter by category first
+    if (category) {
+      const { data: categoryData } = await supabase
+        .from('plant_categories')
+        .select('id')
+        .eq('name', category)
+        .single();
+      
+      if (categoryData) {
+        query = query.eq('category_id', categoryData.id);
+      }
+    }
+
+    const { data: plants, error } = await query;
+
+    if (error) throw error;
+
+    // Score each plant
+    const userConditions = {
+      rainfall: parseInt(rainfall),
+      soil_type,
+      sunlight
+    };
+
+    const scoredPlants = plants.map(plant => {
+      const { score, reasons, warnings } = calculateSuitability(plant, userConditions);
+      
+      return {
+        plant: {
+          id: plant.id,
+          scientific_name: plant.scientific_name,
+          common_names: plant.common_names,
+          category: plant.plant_categories?.name,
+          description: plant.description,
+          max_height_cm: plant.max_height_cm,
+          water_needs: plant.water_needs,
+          sunlight: plant.sunlight,
+          maintenance_level: plant.maintenance_level
+        },
+        suitability_score: score,
+        match_reasons: reasons,
+        warnings: warnings
+      };
+    });
+
+    // Sort by score (highest first)
+    scoredPlants.sort((a, b) => b.suitability_score - a.suitability_score);
+
+    // Return top 10 recommendations
+    res.json({
+      total_analyzed: plants.length,
+      recommendations: scoredPlants.slice(0, 10),
+      user_conditions: userConditions
+    });
+
+  } catch (error) {
+    console.error('Recommendation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // =============================
 // START SERVER
