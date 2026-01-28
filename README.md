@@ -108,5 +108,5 @@ Widson Ambaisi
 
 Building Ask Botanique
 Background in landscape architecture + full-stack development
-LinkedIn: [your-linkedin]
-Twitter: [your-twitter]
+LinkedIn: https://www.linkedin.com/in/widson-ambaisi-0108a068/
+Twitter: https://x.com/SecAnalystX
