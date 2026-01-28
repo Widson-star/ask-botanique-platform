@@ -60,7 +60,48 @@
             font-weight: 500;
         }
 
-        .search-section {
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #1a5d5d;
+            border-color: white;
+        }
+
+        /* Sections */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .search-section, .recommend-section {
             background: white;
             padding: 30px;
             border-radius: 10px;
@@ -98,6 +139,9 @@
             .filters {
                 grid-template-columns: 1fr;
             }
+            .tab-navigation {
+                flex-direction: column;
+            }
         }
 
         .filter-group {
@@ -111,7 +155,7 @@
             color: #333;
         }
 
-        .filter-group select {
+        .filter-group select, .filter-group input[type="range"] {
             padding: 10px;
             border: 2px solid #ddd;
             border-radius: 5px;
@@ -123,6 +167,68 @@
         .filter-group select:focus {
             outline: none;
             border-color: #1a5d5d;
+        }
+
+        /* Slider styling */
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            background: #ddd;
+            outline: none;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+            padding: 0;
+        }
+
+        input[type="range"]:hover {
+            opacity: 1;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #1a5d5d;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #1a5d5d;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .slider-value {
+            display: inline-block;
+            background: #e0f2f1;
+            color: #1a5d5d;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        /* Radio buttons for sunlight */
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 8px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .radio-option input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
         }
 
         .button-group {
@@ -142,12 +248,12 @@
             transition: all 0.3s;
         }
 
-        .btn-search {
+        .btn-search, .btn-recommend {
             background: #1a5d5d;
             color: white;
         }
 
-        .btn-search:hover {
+        .btn-search:hover, .btn-recommend:hover {
             background: #0d3b3b;
             transform: translateY(-2px);
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
@@ -200,6 +306,41 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
 
+        /* Score badge */
+        .score-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .score-perfect {
+            background: #4caf50;
+            color: white;
+        }
+
+        .score-excellent {
+            background: #8bc34a;
+            color: white;
+        }
+
+        .score-good {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .score-fair {
+            background: #ff9800;
+            color: white;
+        }
+
+        .score-poor {
+            background: #f44336;
+            color: white;
+        }
+
         .plant-card h3 {
             color: #1a5d5d;
             margin-bottom: 8px;
@@ -238,6 +379,42 @@
         .detail-label {
             font-weight: 600;
             color: #333;
+        }
+
+        /* Match reasons */
+        .match-reasons {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .reason {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 0.85em;
+            color: #2e7d32;
+        }
+
+        .reason::before {
+            content: "✓";
+            font-weight: bold;
+            color: #4caf50;
+        }
+
+        .warning {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 0.85em;
+            color: #f57c00;
+        }
+
+        .warning::before {
+            content: "⚠";
+            font-weight: bold;
         }
 
         .no-results {
@@ -285,49 +462,105 @@
             <p>Find the right plants for your East African landscapes</p>
         </header>
 
-        <div class="search-section">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Search for a plant (e.g., grass, cypress, palm)...">
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" onclick="switchTab('search')">🔍 Search Plants</button>
+            <button class="tab-btn" onclick="switchTab('recommend')">🎯 Get Recommendations</button>
+        </div>
+
+        <!-- Search Tab -->
+        <div id="search-tab" class="tab-content active">
+            <div class="search-section">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search for a plant (e.g., grass, cypress, palm)...">
+                </div>
+
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="sunlight">Sunlight</label>
+                        <select id="sunlight">
+                            <option value="">All sunlight levels</option>
+                            <option value="Full sun">Full sun</option>
+                            <option value="Partial shade">Partial shade</option>
+                            <option value="Bright light">Bright light</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="water">Water Needs</label>
+                        <select id="water">
+                            <option value="">All water needs</option>
+                            <option value="Low">Low</option>
+                            <option value="Moderate">Moderate</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="category">Category</label>
+                        <select id="category">
+                            <option value="">All categories</option>
+                            <option value="Grass">Grass</option>
+                            <option value="Groundcover">Groundcover</option>
+                            <option value="Shrub">Shrub</option>
+                            <option value="Tree">Tree</option>
+                            <option value="Palm">Palm</option>
+                            <option value="Indoor">Indoor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-search" onclick="searchPlants()">Search</button>
+                    <button class="btn-clear" onclick="clearFilters()">Clear</button>
+                </div>
             </div>
+        </div>
 
-            <div class="filters">
-                <div class="filter-group">
-                    <label for="sunlight">Sunlight</label>
-                    <select id="sunlight">
-                        <option value="">All sunlight levels</option>
-                        <option value="Full sun">Full sun</option>
-                        <option value="Partial shade">Partial shade</option>
-                        <option value="Bright light">Bright light</option>
-                    </select>
+        <!-- Recommend Tab -->
+        <div id="recommend-tab" class="tab-content">
+            <div class="recommend-section">
+                <h2 style="color: #1a5d5d; margin-bottom: 20px;">Get Smart Plant Recommendations</h2>
+                <p style="color: #666; margin-bottom: 20px;">Tell us about your site conditions and we'll recommend the best plants for your landscape.</p>
+
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="rainfall">Annual Rainfall (mm): <span class="slider-value" id="rainfallValue">800mm</span></label>
+                        <input type="range" id="rainfall" min="400" max="2000" value="800" step="50" oninput="updateRainfallValue(this.value)">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="soil">Soil Type</label>
+                        <select id="soil">
+                            <option value="loam">Loam (balanced)</option>
+                            <option value="clay">Clay (heavy)</option>
+                            <option value="sandy">Sandy (light)</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="filter-group">
-                    <label for="water">Water Needs</label>
-                    <select id="water">
-                        <option value="">All water needs</option>
-                        <option value="Low">Low</option>
-                        <option value="Moderate">Moderate</option>
-                        <option value="High">High</option>
-                    </select>
+                <div class="filter-group" style="margin-bottom: 20px;">
+                    <label>Sunlight Conditions</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="sun-full" name="sunlight-rec" value="full sun" checked>
+                            <label for="sun-full">Full sun</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="sun-partial" name="sunlight-rec" value="partial shade">
+                            <label for="sun-partial">Partial shade</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="sun-shade" name="sunlight-rec" value="shade">
+                            <label for="sun-shade">Shade</label>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="filter-group">
-                    <label for="category">Category</label>
-                    <select id="category">
-                        <option value="">All categories</option>
-                        <option value="Grass">Grass</option>
-                        <option value="Groundcover">Groundcover</option>
-                        <option value="Shrub">Shrub</option>
-                        <option value="Tree">Tree</option>
-                        <option value="Palm">Palm</option>
-                        <option value="Indoor">Indoor</option>
-                    </select>
+                <div class="button-group">
+                    <button class="btn-recommend" onclick="getRecommendations()">Get Recommendations</button>
+                    <button class="btn-clear" onclick="clearRecommendations()">Clear</button>
                 </div>
-            </div>
-
-            <div class="button-group">
-                <button class="btn-search" onclick="searchPlants()">Search</button>
-                <button class="btn-clear" onclick="clearFilters()">Clear</button>
             </div>
         </div>
 
@@ -346,6 +579,24 @@
 
     <script>
         const API_URL = 'https://ask-botanique-api.onrender.com';
+
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tab}-tab`).classList.add('active');
+
+            // Clear results when switching tabs
+            document.getElementById('resultsContainer').innerHTML = '';
+            document.getElementById('resultCount').textContent = '';
+        }
+
+        function updateRainfallValue(value) {
+            document.getElementById('rainfallValue').textContent = `${value}mm`;
+        }
 
         async function searchPlants() {
             const search = document.getElementById('searchInput').value;
@@ -400,6 +651,89 @@
             }
         }
 
+        async function getRecommendations() {
+            const rainfall = document.getElementById('rainfall').value;
+            const soil = document.getElementById('soil').value;
+            const sunlight = document.querySelector('input[name="sunlight-rec"]:checked').value;
+
+            const loading = document.getElementById('loading');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const errorMsg = document.getElementById('errorMsg');
+            const resultCount = document.getElementById('resultCount');
+
+            loading.style.display = 'block';
+            resultsContainer.innerHTML = '';
+            errorMsg.style.display = 'none';
+
+            try {
+                const url = `${API_URL}/api/recommend?rainfall=${rainfall}&soil_type=${soil}&sunlight=${encodeURIComponent(sunlight)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                loading.style.display = 'none';
+
+                if (data.recommendations && data.recommendations.length > 0) {
+                    resultCount.textContent = `Top ${data.recommendations.length} recommended plants (from ${data.total_analyzed} analyzed)`;
+                    displayRecommendations(data.recommendations);
+                } else {
+                    resultCount.textContent = '';
+                    resultsContainer.innerHTML = `
+                        <div class="no-results">
+                            <h3>No recommendations available</h3>
+                            <p>Try different site conditions</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                errorMsg.textContent = 'Error getting recommendations. Please try again.';
+                errorMsg.style.display = 'block';
+                console.error('Error:', error);
+            }
+        }
+
+        function getScoreClass(score) {
+            if (score >= 90) return 'score-perfect';
+            if (score >= 75) return 'score-excellent';
+            if (score >= 60) return 'score-good';
+            if (score >= 40) return 'score-fair';
+            return 'score-poor';
+        }
+
+        function getScoreLabel(score) {
+            if (score >= 90) return 'Perfect Match';
+            if (score >= 75) return 'Excellent';
+            if (score >= 60) return 'Good Match';
+            if (score >= 40) return 'Fair Match';
+            return 'Consider Alternatives';
+        }
+
+        function displayRecommendations(recommendations) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = recommendations.map(rec => `
+                <div class="plant-card">
+                    <div class="score-badge ${getScoreClass(rec.suitability_score)}">
+                        ${rec.suitability_score}/100 - ${getScoreLabel(rec.suitability_score)}
+                    </div>
+                    <h3>${rec.plant.scientific_name}</h3>
+                    <div class="common-name">${rec.plant.common_names?.join(', ') || 'N/A'}</div>
+                    <div class="category">${rec.plant.category || 'Plant'}</div>
+                    <div class="plant-details">
+                        <p><span class="detail-label">Sunlight:</span> ${rec.plant.sunlight || 'N/A'}</p>
+                        <p><span class="detail-label">Water:</span> ${rec.plant.water_needs || 'N/A'}</p>
+                        <p><span class="detail-label">Maintenance:</span> ${rec.plant.maintenance_level || 'N/A'}</p>
+                        ${rec.plant.description ? `<p><span class="detail-label">Notes:</span> ${rec.plant.description}</p>` : ''}
+                    </div>
+                    ${rec.match_reasons.length > 0 || rec.warnings.length > 0 ? `
+                        <div class="match-reasons">
+                            ${rec.match_reasons.map(reason => `<div class="reason">${reason}</div>`).join('')}
+                            ${rec.warnings.map(warning => `<div class="warning">${warning}</div>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
         function displayPlants(plants) {
             const resultsContainer = document.getElementById('resultsContainer');
             resultsContainer.innerHTML = plants.map(plant => `
@@ -422,6 +756,15 @@
             document.getElementById('sunlight').value = '';
             document.getElementById('water').value = '';
             document.getElementById('category').value = '';
+            document.getElementById('resultsContainer').innerHTML = '';
+            document.getElementById('resultCount').textContent = '';
+        }
+
+        function clearRecommendations() {
+            document.getElementById('rainfall').value = 800;
+            document.getElementById('rainfallValue').textContent = '800mm';
+            document.getElementById('soil').value = 'loam';
+            document.getElementById('sun-full').checked = true;
             document.getElementById('resultsContainer').innerHTML = '';
             document.getElementById('resultCount').textContent = '';
         }
