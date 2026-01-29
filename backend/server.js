@@ -120,10 +120,13 @@ app.get('/plants', async (req, res) => {
   }
 })
 
+// =============================
 // RECOMMENDATION ENGINE ENDPOINT
+// GET /api/recommend
+// =============================
 app.get('/api/recommend', async (req, res) => {
   try {
-    const { rainfall, soil_type, sunlight, category } = req.query;
+    const { rainfall, soil_type, sunlight, category, function: plantFunction } = req.query;
 
     // Validation
     if (!rainfall || !soil_type || !sunlight) {
@@ -153,6 +156,11 @@ app.get('/api/recommend', async (req, res) => {
       }
     }
 
+    // NEW: Filter by function if provided
+    if (plantFunction && plantFunction !== '') {
+      query = query.contains('functions', [plantFunction]);
+    }
+
     const { data: plants, error } = await query;
 
     if (error) throw error;
@@ -177,7 +185,12 @@ app.get('/api/recommend', async (req, res) => {
           max_height_cm: plant.max_height_cm,
           water_needs: plant.water_needs,
           sunlight: plant.sunlight,
-          maintenance_level: plant.maintenance_level
+          maintenance_level: plant.maintenance_level,
+          // NEW: Include image and functions in response
+          image_url: plant.image_url,
+          thumbnail_url: plant.thumbnail_url,
+          functions: plant.functions,
+          image_credits: plant.image_credits
         },
         suitability_score: score,
         match_reasons: reasons,
@@ -192,7 +205,10 @@ app.get('/api/recommend', async (req, res) => {
     res.json({
       total_analyzed: plants.length,
       recommendations: scoredPlants.slice(0, 10),
-      user_conditions: userConditions
+      user_conditions: {
+        ...userConditions,
+        function: plantFunction || null
+      }
     });
 
   } catch (error) {
