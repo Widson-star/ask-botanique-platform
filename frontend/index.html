@@ -306,6 +306,22 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
 
+        /* Plant image styling */
+        .plant-image {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        .plant-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         /* Score badge */
         .score-badge {
             display: inline-block;
@@ -366,6 +382,26 @@
             margin-bottom: 12px;
         }
 
+        /* Plant uses/functions section */
+        .plant-uses {
+            margin: 12px 0;
+            padding: 12px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-left: 3px solid #38b2ac;
+        }
+
+        .plant-uses strong {
+            color: #2d3748;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .plant-uses span {
+            color: #4a5568;
+            font-size: 0.9em;
+        }
+
         .plant-details {
             font-size: 0.9em;
             color: #555;
@@ -417,6 +453,13 @@
             font-weight: bold;
         }
 
+        /* Image credits */
+        .image-credits {
+            margin-top: 12px;
+            font-size: 0.75em;
+            color: #a0aec0;
+        }
+
         .no-results {
             background: white;
             padding: 40px;
@@ -450,6 +493,7 @@
             font-size: 0.9em;
             font-weight: 500;
         }
+
     </style>
 </head>
 <body>
@@ -557,6 +601,26 @@
                     </div>
                 </div>
 
+                <!-- NEW: Function/Purpose Filter -->
+                <div class="filter-group" style="margin-bottom: 20px;">
+                    <label for="plantFunction">What do you want this plant for?</label>
+                    <select id="plantFunction">
+                        <option value="">Any purpose</option>
+                        <option value="Shade tree">Shade tree</option>
+                        <option value="Ornamental">Ornamental / Decorative</option>
+                        <option value="Hedge">Hedge / Privacy screen</option>
+                        <option value="Groundcover">Groundcover</option>
+                        <option value="Urban landscaping">Urban landscaping</option>
+                        <option value="Screening">Screening</option>
+                        <option value="Windbreak">Windbreak</option>
+                        <option value="Flowering tree">Flowering tree</option>
+                        <option value="Street tree">Street tree</option>
+                        <option value="Bee forage">Bee forage / Pollinator</option>
+                        <option value="Erosion control">Erosion control</option>
+                        <option value="Nitrogen fixer">Nitrogen fixer</option>
+                    </select>
+                </div>
+
                 <div class="button-group">
                     <button class="btn-recommend" onclick="getRecommendations()">Get Recommendations</button>
                     <button class="btn-clear" onclick="clearRecommendations()">Clear</button>
@@ -655,6 +719,7 @@
             const rainfall = document.getElementById('rainfall').value;
             const soil = document.getElementById('soil').value;
             const sunlight = document.querySelector('input[name="sunlight-rec"]:checked').value;
+            const plantFunction = document.getElementById('plantFunction').value;
 
             const loading = document.getElementById('loading');
             const resultsContainer = document.getElementById('resultsContainer');
@@ -666,7 +731,13 @@
             errorMsg.style.display = 'none';
 
             try {
-                const url = `${API_URL}/api/recommend?rainfall=${rainfall}&soil_type=${soil}&sunlight=${encodeURIComponent(sunlight)}`;
+                let url = `${API_URL}/api/recommend?rainfall=${rainfall}&soil_type=${soil}&sunlight=${encodeURIComponent(sunlight)}`;
+                
+                // Add function parameter if selected
+                if (plantFunction) {
+                    url += `&function=${encodeURIComponent(plantFunction)}`;
+                }
+
                 const response = await fetch(url);
                 const data = await response.json();
 
@@ -680,7 +751,7 @@
                     resultsContainer.innerHTML = `
                         <div class="no-results">
                             <h3>No recommendations available</h3>
-                            <p>Try different site conditions</p>
+                            <p>Try different site conditions or purpose</p>
                         </div>
                     `;
                 }
@@ -712,22 +783,46 @@
             const resultsContainer = document.getElementById('resultsContainer');
             resultsContainer.innerHTML = recommendations.map(rec => `
                 <div class="plant-card">
+                    ${rec.plant.image_url ? `
+                        <div class="plant-image">
+                            <img src="${rec.plant.image_url}" 
+                                 alt="${rec.plant.scientific_name}"
+                                 onerror="this.style.display='none'; this.parentElement.style.display='none';">
+                        </div>
+                    ` : ''}
+                    
                     <div class="score-badge ${getScoreClass(rec.suitability_score)}">
                         ${rec.suitability_score}/100 - ${getScoreLabel(rec.suitability_score)}
                     </div>
+                    
                     <h3>${rec.plant.scientific_name}</h3>
                     <div class="common-name">${rec.plant.common_names?.join(', ') || 'N/A'}</div>
                     <div class="category">${rec.plant.category || 'Plant'}</div>
+                    
+                    ${rec.plant.functions?.length > 0 ? `
+                        <div class="plant-uses">
+                            <strong>Uses:</strong>
+                            <span>${rec.plant.functions.join(' • ')}</span>
+                        </div>
+                    ` : ''}
+                    
                     <div class="plant-details">
                         <p><span class="detail-label">Sunlight:</span> ${rec.plant.sunlight || 'N/A'}</p>
                         <p><span class="detail-label">Water:</span> ${rec.plant.water_needs || 'N/A'}</p>
                         <p><span class="detail-label">Maintenance:</span> ${rec.plant.maintenance_level || 'N/A'}</p>
                         ${rec.plant.description ? `<p><span class="detail-label">Notes:</span> ${rec.plant.description}</p>` : ''}
                     </div>
+                    
                     ${rec.match_reasons.length > 0 || rec.warnings.length > 0 ? `
                         <div class="match-reasons">
                             ${rec.match_reasons.map(reason => `<div class="reason">${reason}</div>`).join('')}
                             ${rec.warnings.map(warning => `<div class="warning">${warning}</div>`).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    ${rec.plant.image_credits ? `
+                        <div class="image-credits">
+                            ${rec.plant.image_credits}
                         </div>
                     ` : ''}
                 </div>
@@ -738,15 +833,37 @@
             const resultsContainer = document.getElementById('resultsContainer');
             resultsContainer.innerHTML = plants.map(plant => `
                 <div class="plant-card">
+                    ${plant.image_url ? `
+                        <div class="plant-image">
+                            <img src="${plant.image_url}" 
+                                 alt="${plant.scientific_name}"
+                                 onerror="this.style.display='none'; this.parentElement.style.display='none';">
+                        </div>
+                    ` : ''}
+                    
                     <h3>${plant.scientific_name}</h3>
                     <div class="common-name">${plant.common_names?.join(', ') || 'N/A'}</div>
                     <div class="category">${plant.plant_categories?.name || plant.category || 'Plant'}</div>
+                    
+                    ${plant.functions?.length > 0 ? `
+                        <div class="plant-uses">
+                            <strong>Uses:</strong>
+                            <span>${plant.functions.join(' • ')}</span>
+                        </div>
+                    ` : ''}
+                    
                     <div class="plant-details">
                         <p><span class="detail-label">Sunlight:</span> ${plant.sunlight || 'N/A'}</p>
                         <p><span class="detail-label">Water:</span> ${plant.water_needs || 'N/A'}</p>
                         <p><span class="detail-label">Maintenance:</span> ${plant.maintenance_level || 'N/A'}</p>
                         ${plant.description ? `<p><span class="detail-label">Notes:</span> ${plant.description}</p>` : ''}
                     </div>
+                    
+                    ${plant.image_credits ? `
+                        <div class="image-credits">
+                            ${plant.image_credits}
+                        </div>
+                    ` : ''}
                 </div>
             `).join('');
         }
@@ -765,6 +882,7 @@
             document.getElementById('rainfallValue').textContent = '800mm';
             document.getElementById('soil').value = 'loam';
             document.getElementById('sun-full').checked = true;
+            document.getElementById('plantFunction').value = '';
             document.getElementById('resultsContainer').innerHTML = '';
             document.getElementById('resultCount').textContent = '';
         }
