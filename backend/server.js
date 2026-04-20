@@ -18,7 +18,11 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 )
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.error('FATAL: ANTHROPIC_API_KEY is not set')
+  process.exit(1)
+}
+const anthropic = new Anthropic()
 
 // =============================
 // ROOT
