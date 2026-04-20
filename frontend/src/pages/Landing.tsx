@@ -1,44 +1,45 @@
 import { Link } from 'react-router-dom'
+import { CloudRain, Sun, Layers, MessageCircle, Leaf, BarChart2 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import TeaserSearch from '../components/TeaserSearch'
 import styles from './Landing.module.css'
 
 const FEATURES = [
   {
-    icon: '🌧️',
+    icon: CloudRain,
     title: 'Rainfall Intelligence',
     desc: 'Match plants to your site\'s annual rainfall — from arid 400mm to wet 2000mm+.',
   },
   {
-    icon: '☀️',
+    icon: Sun,
     title: 'Sunlight Matching',
     desc: 'Full sun, partial shade, or deep shade — we surface plants built for your exposure.',
   },
   {
-    icon: '🌱',
+    icon: Layers,
     title: 'Soil Compatibility',
     desc: 'Clay, loam, or sandy — our scoring weights soil fit so your plants actually thrive.',
   },
   {
-    icon: '🤖',
+    icon: MessageCircle,
     title: 'AI-Powered Chat',
-    desc: 'Ask anything in plain English. Our assistant reasons across 171+ East African species.',
+    desc: 'Ask anything in plain English. Our assistant reasons across thousands of East African species.',
   },
   {
-    icon: '📍',
+    icon: Leaf,
     title: 'Native Species First',
     desc: 'Ecologically adapted plants get a bonus score — less maintenance, more resilience.',
   },
   {
-    icon: '📊',
+    icon: BarChart2,
     title: 'Scored & Explained',
     desc: 'Every recommendation comes with a 0–100 suitability score and clear match reasons.',
   },
 ]
 
 const SCORING = [
-  { label: 'Rainfall Compatibility', weight: 30, color: '#1a5d5d' },
-  { label: 'Sunlight Match', weight: 25, color: '#2a7a7a' },
+  { label: 'Rainfall Compatibility', weight: 30, color: '#1D9E75' },
+  { label: 'Sunlight Match', weight: 25, color: '#2ab885' },
   { label: 'Soil Suitability', weight: 20, color: '#4caf7d' },
   { label: 'Maintenance Level', weight: 15, color: '#6fcf97' },
   { label: 'Native Species Bonus', weight: 10, color: '#a8e6c3' },
@@ -96,17 +97,21 @@ export default function Landing() {
       {/* ── FEATURES ── */}
       <section className={styles.section}>
         <div className={styles.sectionInner}>
-          <h2 className={styles.sectionTitle}>Everything you need to choose the right plant</h2>
-          <p className={styles.sectionSubtitle}>
-            Stop guessing. Our multi-factor scoring engine and AI chat put decades of
-            field knowledge at your fingertips.
-          </p>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Everything you need to choose the right plant</h2>
+            <p className={styles.sectionSubtitle}>
+              Stop guessing. Our multi-factor scoring engine and AI chat put decades of
+              field knowledge at your fingertips.
+            </p>
+          </div>
           <div className={styles.featureGrid}>
-            {FEATURES.map(f => (
-              <div key={f.title} className={styles.featureCard}>
-                <div className={styles.featureIcon}>{f.icon}</div>
-                <h3 className={styles.featureTitle}>{f.title}</h3>
-                <p className={styles.featureDesc}>{f.desc}</p>
+            {FEATURES.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className={styles.featureCard}>
+                <div className={styles.featureIconWrap}>
+                  <Icon size={22} strokeWidth={1.8} />
+                </div>
+                <h3 className={styles.featureTitle}>{title}</h3>
+                <p className={styles.featureDesc}>{desc}</p>
               </div>
             ))}
           </div>
@@ -118,15 +123,15 @@ export default function Landing() {
         <div className={styles.sectionInner}>
           <div className={styles.splitLayout}>
             <div className={styles.splitText}>
-              <h2 className={styles.sectionTitle} style={{ textAlign: 'left' }}>
+              <h2 className={styles.sectionTitleAlt}>
                 Transparent scoring — no black boxes
               </h2>
-              <p className={styles.sectionSubtitle} style={{ textAlign: 'left' }}>
+              <p className={styles.sectionSubtitleAlt}>
                 Every recommendation is backed by a weighted algorithm derived from
                 Kenya Horticultural Society data and real field observations from
                 Botanique Designers projects.
               </p>
-              <Link to="/signup" className="btn btn-primary" style={{ marginTop: 8 }}>
+              <Link to="/signup" className="btn btn-primary" style={{ marginTop: 8, alignSelf: 'flex-start' }}>
                 Try it now →
               </Link>
             </div>
