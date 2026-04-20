@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import TeaserSearch from '../components/TeaserSearch'
 import styles from './Landing.module.css'
 
 const FEATURES = [
@@ -79,19 +80,16 @@ export default function Landing() {
             <span className={styles.heroAccent}>for every site condition</span>
           </h1>
           <p className={styles.heroSubtext}>
-            Describe your rainfall, soil, and sunlight. Ask Botanique scores 171+ species
+            Describe your rainfall, soil, and sunlight. Ask Botanique scores thousands of East African species
             in real time and explains exactly why each plant fits — or doesn't.
           </p>
-          <div className={styles.heroActions}>
-            {user ? (
+          {user ? (
+            <div className={styles.heroActions}>
               <Link to="/chat" className="btn btn-white btn-lg">Open Chat →</Link>
-            ) : (
-              <>
-                <Link to="/signup" className="btn btn-white btn-lg">Start for free</Link>
-                <Link to="/login" className={styles.heroSecondary}>Already have an account →</Link>
-              </>
-            )}
-          </div>
+            </div>
+          ) : (
+            <TeaserSearch />
+          )}
         </div>
       </section>
 
