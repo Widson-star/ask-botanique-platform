@@ -76,8 +76,8 @@ export default function Landing() {
         <div className={styles.heroInner}>
           <div className={styles.heroBadge}>🌍 Built for East African landscaping</div>
           <h1 className={styles.heroHeading}>
-            The AI plant advisor<br />
-            <span className={styles.heroAccent}>for every site condition</span>
+            Plant intelligence platform<br />
+            <span className={styles.heroAccent}>for tropical countries</span>
           </h1>
           <p className={styles.heroSubtext}>
             Describe your rainfall, soil, and sunlight. Ask Botanique scores thousands of East African species
