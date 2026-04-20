@@ -1,5 +1,5 @@
 import express from 'express'
-import Anthropic from '@anthropic-ai/sdk'
+import Groq from 'groq-sdk'
 import { createClient } from '@supabase/supabase-js'
 import cors from 'cors'
 import 'dotenv/config';
@@ -18,11 +18,11 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 )
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.error('FATAL: ANTHROPIC_API_KEY is not set')
+if (!process.env.GROQ_API_KEY) {
+  console.error('FATAL: GROQ_API_KEY is not set')
   process.exit(1)
 }
-const anthropic = new Anthropic()
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 // =============================
 // ROOT
@@ -352,16 +352,17 @@ app.post('/api/chat', async (req, res) => {
       content: message + plantContext,
     })
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: claudeHistory,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...claudeHistory,
+      ],
     })
 
-    const reply = response.content[0].type === 'text'
-      ? response.content[0].text
-      : 'Sorry, I could not generate a response.'
+    const reply = response.choices[0]?.message?.content
+      ?? 'Sorry, I could not generate a response.'
 
     res.json({
       reply,
