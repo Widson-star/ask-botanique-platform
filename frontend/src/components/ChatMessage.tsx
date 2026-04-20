@@ -1,3 +1,4 @@
+import ReactMarkdown from 'react-markdown'
 import type { ChatMessage as ChatMessageType } from '../types'
 import styles from './ChatMessage.module.css'
 
@@ -14,7 +15,9 @@ export default function ChatMessage({ message }: Props) {
         {isUser ? '👤' : '🌿'}
       </div>
       <div className={styles.bubble}>
-        <p className={styles.text}>{message.content}</p>
+        <div className={styles.text}>
+          <ReactMarkdown>{message.content}</ReactMarkdown>
+        </div>
 
         {message.plants && message.plants.length > 0 && (
           <div className={styles.plants}>

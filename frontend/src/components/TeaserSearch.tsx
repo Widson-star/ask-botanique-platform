@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import ReactMarkdown from 'react-markdown'
 import styles from './TeaserSearch.module.css'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
@@ -131,7 +132,9 @@ export default function TeaserSearch() {
           {result?.reply && (
             <div className={styles.reply}>
               <span className={styles.replyIcon}>🌿</span>
-              <p>{result.reply}</p>
+              <div className={styles.replyText}>
+                <ReactMarkdown>{result.reply}</ReactMarkdown>
+              </div>
             </div>
           )}
 
