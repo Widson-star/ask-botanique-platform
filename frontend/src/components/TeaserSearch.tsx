@@ -108,10 +108,10 @@ export default function TeaserSearch() {
         />
         <button
           type="submit"
-          className={`btn btn-white ${styles.submitBtn}`}
+          className={styles.submitBtn}
           disabled={loading || !query.trim()}
         >
-          {loading ? <span className="spinner" style={{ borderTopColor: '#1a5d5d', borderColor: 'rgba(26,93,93,0.3)' }} /> : 'Ask →'}
+          {loading ? <span className="spinner" style={{ borderTopColor: 'white', borderColor: 'rgba(255,255,255,0.3)' }} /> : 'Ask →'}
         </button>
       </form>
 
@@ -176,7 +176,7 @@ export default function TeaserSearch() {
                   </div>
 
                   <div className={styles.blurOverlay}>
-                    <Link to="/signup" className="btn btn-primary" style={{ fontSize: '0.82rem', padding: '8px 16px' }}>
+                    <Link to="/signup" className={styles.unlockBtn}>
                       Unlock full profile
                     </Link>
                   </div>
@@ -190,7 +190,7 @@ export default function TeaserSearch() {
               Sign up free to see full plant profiles, save results, and filter by location
             </p>
             <div className={styles.promptActions}>
-              <Link to="/signup" className="btn btn-white">Create free account</Link>
+              <Link to="/signup" className={styles.promptSignupBtn}>Create free account</Link>
               <Link to="/login" className={styles.promptLogin}>Already have an account →</Link>
             </div>
           </div>

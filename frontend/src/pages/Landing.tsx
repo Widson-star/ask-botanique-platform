@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { CloudRain, Sun, Layers, MessageCircle, Leaf, BarChart2 } from 'lucide-react'
+import { CloudRain, Sun, Layers, MessageCircle, Leaf, BarChart2, ArrowRight } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import TeaserSearch from '../components/TeaserSearch'
 import styles from './Landing.module.css'
@@ -13,7 +13,7 @@ const FEATURES = [
   {
     icon: Sun,
     title: 'Sunlight Matching',
-    desc: 'Full sun, partial shade, or deep shade — we surface plants built for your exposure.',
+    desc: 'Full sun, partial shade, or deep shade — we surface plants built for your exact exposure.',
   },
   {
     icon: Layers,
@@ -37,12 +37,28 @@ const FEATURES = [
   },
 ]
 
-const SCORING = [
-  { label: 'Rainfall Compatibility', weight: 30, color: '#1D9E75' },
-  { label: 'Sunlight Match', weight: 25, color: '#2ab885' },
-  { label: 'Soil Suitability', weight: 20, color: '#4caf7d' },
-  { label: 'Maintenance Level', weight: 15, color: '#6fcf97' },
-  { label: 'Native Species Bonus', weight: 10, color: '#a8e6c3' },
+const TESTIMONIALS = [
+  {
+    quote: 'Ask Botanique helped me specify the right groundcovers for a shaded Westlands courtyard in under 5 minutes.',
+    name: 'James K.',
+    role: 'Landscape Architect, Nairobi',
+  },
+  {
+    quote: 'The scoring system is exactly what I needed to justify plant choices to clients. No more guesswork.',
+    name: 'Amina L.',
+    role: 'Garden Designer, Mombasa',
+  },
+  {
+    quote: 'Used the free tier to plan a rooftop garden — the rainfall intelligence was spot on for Kisumu.',
+    name: 'David M.',
+    role: 'Homeowner, Kisumu',
+  },
+]
+
+const HERO_IMAGES = [
+  'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=500&q=80',
+  'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=380&q=80',
+  'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=380&q=80',
 ]
 
 export default function Landing() {
@@ -50,6 +66,7 @@ export default function Landing() {
 
   return (
     <div className={styles.page}>
+
       {/* ── NAV ── */}
       <nav className={styles.nav}>
         <div className={styles.navInner}>
@@ -59,47 +76,99 @@ export default function Landing() {
           </div>
           <div className={styles.navLinks}>
             {user ? (
-              <Link to="/chat" className="btn btn-white">
-                Open Chat →
-              </Link>
+              <Link to="/chat" className={styles.navCta}>Open Chat →</Link>
             ) : (
               <>
                 <Link to="/login" className={styles.navLink}>Sign in</Link>
-                <Link to="/signup" className="btn btn-white">Get started free</Link>
+                <Link to="/signup" className={styles.navCta}>Get started free</Link>
               </>
             )}
           </div>
         </div>
       </nav>
 
-      {/* ── HERO ── */}
+      {/* ── HERO — split layout ── */}
       <section className={styles.hero}>
         <div className={styles.heroInner}>
-          <div className={styles.heroBadge}>🌍 Built for East African landscaping</div>
-          <h1 className={styles.heroHeading}>
-            Plant intelligence platform<br />
-            <span className={styles.heroAccent}>for tropical countries</span>
-          </h1>
-          <p className={styles.heroSubtext}>
-            Describe your rainfall, soil, and sunlight. Ask Botanique scores thousands of East African species
-            in real time and explains exactly why each plant fits — or doesn't.
-          </p>
-          {user ? (
-            <div className={styles.heroActions}>
-              <Link to="/chat" className="btn btn-white btn-lg">Open Chat →</Link>
+
+          {/* Left column */}
+          <div className={styles.heroText}>
+            <div className={styles.heroBadge}>
+              🌍 Built for East African landscaping
             </div>
-          ) : (
-            <TeaserSearch />
-          )}
+            <h1 className={styles.heroHeading}>
+              The plant intelligence<br />
+              <span className={styles.heroAccent}>platform for tropical</span><br />
+              <span className={styles.heroAccent}>landscapes</span>
+            </h1>
+            <p className={styles.heroSubtext}>
+              Describe your rainfall, soil, and sunlight. Ask Botanique scores
+              thousands of East African species in real time and explains exactly
+              why each plant fits — or doesn't.
+            </p>
+            {user ? (
+              <div className={styles.heroActions}>
+                <Link to="/chat" className={styles.btnPrimary}>Open Chat <ArrowRight size={16} /></Link>
+              </div>
+            ) : (
+              <div className={styles.heroActions}>
+                <Link to="/signup" className={styles.btnPrimary}>Get started free</Link>
+                <Link to="/login" className={styles.btnGhost}>See how it works →</Link>
+              </div>
+            )}
+            <div className={styles.heroStats}>
+              <span>171+ Species</span>
+              <span className={styles.statDot}>·</span>
+              <span>5,000 target</span>
+              <span className={styles.statDot}>·</span>
+              <span>Free forever</span>
+            </div>
+          </div>
+
+          {/* Right column — botanical mosaic */}
+          <div className={styles.heroVisual}>
+            <div className={styles.mosaic}>
+              <div className={styles.mosaicMain}>
+                <img src={HERO_IMAGES[0]} alt="Tropical plant" loading="lazy" />
+              </div>
+              <div className={styles.mosaicRight}>
+                <div className={styles.mosaicTop}>
+                  <img src={HERO_IMAGES[1]} alt="Botanical garden" loading="lazy" />
+                </div>
+                <div className={styles.mosaicBottom}>
+                  <img src={HERO_IMAGES[2]} alt="Acacia tree" loading="lazy" />
+                </div>
+              </div>
+              {/* Floating stat bubble */}
+              <div className={styles.floatBubble}>
+                <span className={styles.floatScore}>8/10</span>
+                <span className={styles.floatLabel}>Acacia tortilis</span>
+              </div>
+              {/* Floating badge */}
+              <div className={styles.floatBadge}>🌿 Native species</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── TEASER SEARCH — own section ── */}
+      <section className={styles.teaserSection}>
+        <div className={styles.teaserSectionInner}>
+          <p className={styles.teaserSectionLabel}>TRY IT FREE</p>
+          <h2 className={styles.teaserSectionTitle}>Ask the AI plant advisor</h2>
+          <p className={styles.teaserSectionSub}>
+            One free query — no account needed. See what Ask Botanique can do.
+          </p>
+          <TeaserSearch />
         </div>
       </section>
 
       {/* ── FEATURES ── */}
-      <section className={styles.section}>
+      <section className={styles.featuresSection}>
         <div className={styles.sectionInner}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Everything you need to choose the right plant</h2>
-            <p className={styles.sectionSubtitle}>
+          <div className={styles.featuresHeader}>
+            <h2 className={styles.sectionTitle}>Everything you need to choose<br />the right plant</h2>
+            <p className={styles.sectionSub}>
               Stop guessing. Our multi-factor scoring engine and AI chat put decades of
               field knowledge at your fingertips.
             </p>
@@ -118,37 +187,20 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── SCORING BREAKDOWN ── */}
-      <section className={styles.sectionAlt}>
+      {/* ── SOCIAL PROOF ── */}
+      <section className={styles.proofSection}>
         <div className={styles.sectionInner}>
-          <div className={styles.splitLayout}>
-            <div className={styles.splitText}>
-              <h2 className={styles.sectionTitleAlt}>
-                Transparent scoring — no black boxes
-              </h2>
-              <p className={styles.sectionSubtitleAlt}>
-                Every recommendation is backed by a weighted algorithm derived from
-                Kenya Horticultural Society data and real field observations from
-                Botanique Designers projects.
-              </p>
-              <Link to="/signup" className="btn btn-primary" style={{ marginTop: 8, alignSelf: 'flex-start' }}>
-                Try it now →
-              </Link>
-            </div>
-            <div className={styles.scoreVisual}>
-              {SCORING.map(s => (
-                <div key={s.label} className={styles.scoreRow}>
-                  <span className={styles.scoreLabel}>{s.label}</span>
-                  <div className={styles.scoreBarWrap}>
-                    <div
-                      className={styles.scoreBar}
-                      style={{ width: `${s.weight * 3}%`, background: s.color }}
-                    />
-                    <span className={styles.scoreWeight}>{s.weight}%</span>
-                  </div>
+          <p className={styles.proofLabel}>Trusted by landscapers across East Africa</p>
+          <div className={styles.testimonialGrid}>
+            {TESTIMONIALS.map(t => (
+              <div key={t.name} className={styles.testimonialCard}>
+                <p className={styles.testimonialQuote}>"{t.quote}"</p>
+                <div className={styles.testimonialAuthor}>
+                  <span className={styles.testimonialName}>{t.name}</span>
+                  <span className={styles.testimonialRole}>{t.role}</span>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -156,14 +208,14 @@ export default function Landing() {
       {/* ── CTA ── */}
       <section className={styles.cta}>
         <div className={styles.ctaInner}>
-          <h2 className={styles.ctaHeading}>Ready to find the perfect plants?</h2>
+          <h2 className={styles.ctaHeading}>Start recommending the right plants today</h2>
           <p className={styles.ctaSubtext}>
             Join landscapers and gardeners using Ask Botanique across East Africa.
           </p>
           {user ? (
-            <Link to="/chat" className="btn btn-white btn-lg">Open Chat →</Link>
+            <Link to="/chat" className={styles.ctaBtn}>Open Chat →</Link>
           ) : (
-            <Link to="/signup" className="btn btn-white btn-lg">Create your free account</Link>
+            <Link to="/signup" className={styles.ctaBtn}>Create your free account</Link>
           )}
         </div>
       </section>
