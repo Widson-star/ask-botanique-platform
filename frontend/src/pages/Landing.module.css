@@ -6,14 +6,12 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #F5F1E8;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0px,
-    transparent 39px,
-    rgba(26, 93, 93, 0.065) 39px,
-    rgba(26, 93, 93, 0.065) 40px
-  );
+  background-color: #F5F1E8;
+  background-image:
+    radial-gradient(circle, rgba(26, 93, 93, 0.22) 1.2px, transparent 1.2px),
+    linear-gradient(rgba(26, 93, 93, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26, 93, 93, 0.045) 1px, transparent 1px);
+  background-size: 30px 30px;
   background-attachment: fixed;
   font-family: 'Quicksand', sans-serif;
 }
@@ -401,9 +399,9 @@
 }
 
 .featureCard:hover {
-  box-shadow: inset 3px 0 0 #3E9B9B;
-  background: rgba(245, 241, 232, 0.92);
-  transform: translateX(3px);
+  background: rgba(245, 241, 232, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(26, 93, 93, 0.1);
 }
 
 .featureCardTop {
