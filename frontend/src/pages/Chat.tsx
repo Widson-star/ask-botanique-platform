@@ -19,7 +19,7 @@ function generateId() {
 }
 
 export default function Chat() {
-  const { user, signOut } = useAuth()
+  const { user, session, signOut } = useAuth()
   const [messages, setMessages] = useState<ChatMessageType[]>([
     {
       id: generateId(),
