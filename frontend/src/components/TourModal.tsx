@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { X, ChevronRight, ChevronLeft } from 'lucide-react'
 import styles from './TourModal.module.css'
 
 interface Props {
   onClose: () => void
+  onGetStarted?: () => void
 }
 
 const STEPS = [
@@ -73,7 +73,7 @@ const STEPS = [
   },
 ]
 
-export default function TourModal({ onClose }: Props) {
+export default function TourModal({ onClose, onGetStarted }: Props) {
   const [step, setStep] = useState(0)
 
   useEffect(() => {
@@ -135,9 +135,12 @@ export default function TourModal({ onClose }: Props) {
               <ChevronRight size={18} />
             </button>
           ) : (
-            <Link to="/signup" className={styles.ctaBtn} onClick={onClose}>
-              Get started free →
-            </Link>
+            <button
+              className={styles.ctaBtn}
+              onClick={() => { onClose(); onGetStarted?.() }}
+            >
+              Try it now — it's free →
+            </button>
           )}
         </div>
 

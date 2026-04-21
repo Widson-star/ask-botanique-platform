@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { CloudRain, Sun, Layers, MessageCircle, Leaf, BarChart2, ArrowRight } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
-import TeaserSearch from '../components/TeaserSearch'
+import TeaserSearch, { TeaserSearchHandle } from '../components/TeaserSearch'
 import TourModal from '../components/TourModal'
 import styles from './Landing.module.css'
 
@@ -11,31 +11,37 @@ const FEATURES = [
     icon: CloudRain,
     title: 'Rainfall Intelligence',
     desc: 'Match plants to your site\'s annual rainfall — from arid 400mm to wet 2000mm+.',
+    query: 'Drought-tolerant trees for a site with 500mm annual rainfall in full sun',
   },
   {
     icon: Sun,
     title: 'Sunlight Matching',
     desc: 'Full sun, partial shade, or deep shade — we surface plants built for your exact exposure.',
+    query: 'What plants suit partial shade with loam soil in Nairobi?',
   },
   {
     icon: Layers,
     title: 'Soil Compatibility',
     desc: 'Clay, loam, or sandy — our scoring weights soil fit so your plants actually thrive.',
+    query: 'What trees and shrubs suit clay soil with 900mm rainfall in full sun?',
   },
   {
     icon: MessageCircle,
     title: 'AI-Powered Chat',
     desc: 'Ask anything in plain English. Our assistant reasons across thousands of East African species.',
+    query: 'What are the best low-maintenance plants for a Nairobi courtyard garden?',
   },
   {
     icon: Leaf,
     title: 'Native Species First',
     desc: 'Ecologically adapted plants get a bonus score — less maintenance, more resilience.',
+    query: 'Show me native East African groundcovers for partial shade',
   },
   {
     icon: BarChart2,
     title: 'Scored & Explained',
     desc: 'Every recommendation comes with a 0–100 suitability score and clear match reasons.',
+    query: 'Fast-growing hedges for full sun, loam soil, 900mm annual rainfall',
   },
 ]
 
@@ -66,10 +72,30 @@ const HERO_IMAGES = [
 export default function Landing() {
   const { user } = useAuth()
   const [tourOpen, setTourOpen] = useState(false)
+  const teaserRef = useRef<TeaserSearchHandle>(null)
+  const teaserSectionRef = useRef<HTMLElement>(null)
+
+  function handleGetStarted() {
+    teaserSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setTimeout(() => teaserRef.current?.focus(), 500)
+  }
+
+  function handleFeatureClick(query: string) {
+    teaserSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setTimeout(() => {
+      teaserRef.current?.prefill(query)
+      teaserRef.current?.focus()
+    }, 400)
+  }
 
   return (
     <div className={styles.page}>
-      {tourOpen && <TourModal onClose={() => setTourOpen(false)} />}
+      {tourOpen && (
+        <TourModal
+          onClose={() => setTourOpen(false)}
+          onGetStarted={handleGetStarted}
+        />
+      )}
 
       {/* ── NAV ── */}
       <nav className={styles.nav}>
@@ -97,9 +123,6 @@ export default function Landing() {
 
           {/* Left column */}
           <div className={styles.heroText}>
-            <div className={styles.heroBadge}>
-              🌍 Built for East African landscaping
-            </div>
             <h1 className={styles.heroHeading}>
               The plant intelligence<br />
               <span className={styles.heroAccent}>platform for tropical</span><br />
@@ -143,27 +166,24 @@ export default function Landing() {
                   <img src={HERO_IMAGES[2]} alt="Acacia tree" loading="lazy" />
                 </div>
               </div>
-              {/* Floating stat bubble */}
               <div className={styles.floatBubble}>
-                <span className={styles.floatScore}>8/10</span>
+                <span className={styles.floatScore}>92/100</span>
                 <span className={styles.floatLabel}>Acacia tortilis</span>
               </div>
-              {/* Floating badge */}
-              <div className={styles.floatBadge}>🌿 Native species</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── TEASER SEARCH — own section ── */}
-      <section className={styles.teaserSection}>
+      {/* ── TEASER SEARCH ── */}
+      <section className={styles.teaserSection} ref={teaserSectionRef} id="try-it-free">
         <div className={styles.teaserSectionInner}>
           <p className={styles.teaserSectionLabel}>TRY IT FREE</p>
           <h2 className={styles.teaserSectionTitle}>Get your first plant recommendation — right now</h2>
           <p className={styles.teaserSectionSub}>
             Describe your site or name a plant. No account needed.
           </p>
-          <TeaserSearch />
+          <TeaserSearch ref={teaserRef} />
         </div>
       </section>
 
@@ -178,14 +198,19 @@ export default function Landing() {
             </p>
           </div>
           <div className={styles.featureGrid}>
-            {FEATURES.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className={styles.featureCard}>
+            {FEATURES.map(({ icon: Icon, title, desc, query }) => (
+              <button
+                key={title}
+                className={styles.featureCard}
+                onClick={() => handleFeatureClick(query)}
+              >
                 <div className={styles.featureIconWrap}>
                   <Icon size={22} strokeWidth={1.8} />
                 </div>
                 <h3 className={styles.featureTitle}>{title}</h3>
                 <p className={styles.featureDesc}>{desc}</p>
-              </div>
+                <span className={styles.featureTry}>Try it →</span>
+              </button>
             ))}
           </div>
         </div>
@@ -229,7 +254,10 @@ export default function Landing() {
         <div className={styles.footerInner}>
           <div className={styles.footerBrand}>
             <img src="/Ask_Botanique_Logo.png" alt="Ask Botanique" />
-            <span>Ask Botanique</span>
+            <div>
+              <span className={styles.footerBrandName}>Ask Botanique</span>
+              <span className={styles.footerTagline}>Built for East African landscaping</span>
+            </div>
           </div>
           <div className={styles.footerLinks}>
             <a

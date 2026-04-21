@@ -8,12 +8,39 @@
   gap: 20px;
 }
 
-.label {
-  font-size: 0.82rem;
+/* QUERY COUNTER */
+.counterRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.counterDots {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.counterDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.counterDotFull {
+  background: #1a5d5d;
+}
+
+.counterDotEmpty {
+  background: #C8E8E8;
+}
+
+.counterLabel {
+  font-size: 0.8rem;
   font-weight: 600;
-  color: #4A5568;
-  text-align: center;
-  letter-spacing: 0.04em;
+  color: #6b7280;
 }
 
 /* SEARCH BAR */
