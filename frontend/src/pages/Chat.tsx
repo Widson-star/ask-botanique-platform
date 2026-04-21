@@ -66,9 +66,12 @@ export default function Chat() {
     try {
       const history = messages.map(m => ({ role: m.role, content: m.content }))
 
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
+
       const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ message: text.trim(), history }),
       })
 

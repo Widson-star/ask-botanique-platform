@@ -124,9 +124,8 @@ export default function Landing() {
           {/* Left column */}
           <div className={styles.heroText}>
             <h1 className={styles.heroHeading}>
-              The plant intelligence<br />
-              <span className={styles.heroAccent}>platform for tropical</span><br />
-              <span className={styles.heroAccent}>landscapes</span>
+              Stop guessing.<br />
+              <span className={styles.heroAccent}>Start specifying.</span>
             </h1>
             <p className={styles.heroSubtext}>
               Describe your rainfall, soil, and sunlight. Ask Botanique scores
