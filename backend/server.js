@@ -325,18 +325,51 @@ app.post('/api/chat', async (req, res) => {
         plantContext += '\n---'
       }
     } else {
-      // Provide a broader set of plants as context
-      const { data: samplePlants } = await supabase
-        .from('plants')
-        .select('scientific_name, common_names, sunlight, water_needs, maintenance_level, plant_categories(name)')
-        .limit(20)
+      // Try name-based plant search before falling back to sample list
+      const { data: nameMatches } = await supabase
+        .from('plants_searchable')
+        .select('*, plant_categories(name)')
+        .or(`scientific_name.ilike.%${message}%,common_names_text.ilike.%${message}%`)
+        .limit(5)
 
-      if (samplePlants) {
-        plantContext = `\n\n--- SAMPLE PLANTS IN DATABASE ---\n`
-        plantContext += samplePlants.map(p =>
-          `• ${p.scientific_name} (${p.common_names?.[0] ?? '—'}) | ${p.plant_categories?.name ?? 'Unknown'} | Sunlight: ${p.sunlight ?? '?'} | Water: ${p.water_needs ?? '?'}`
+      if (nameMatches && nameMatches.length > 0) {
+        topPlants = nameMatches.map(p => ({
+          plant: {
+            id: p.id,
+            scientific_name: p.scientific_name,
+            common_names: p.common_names,
+            category: p.plant_categories?.name,
+            description: p.description,
+            water_needs: p.water_needs,
+            sunlight: p.sunlight,
+            maintenance_level: p.maintenance_level,
+            image_url: p.image_url,
+            thumbnail_url: p.thumbnail_url,
+          },
+          suitability_score: null,
+          match_reasons: [],
+          warnings: [],
+        }))
+
+        plantContext = `\n\n--- PLANT DATABASE RESULTS (name search: "${message}") ---\n`
+        plantContext += nameMatches.map(p =>
+          `• ${p.scientific_name} (${p.common_names?.[0] ?? '—'}) | ${p.plant_categories?.name ?? 'Unknown'} | Sunlight: ${p.sunlight ?? '?'} | Water: ${p.water_needs ?? '?'} | Maintenance: ${p.maintenance_level ?? '?'}\n  Description: ${p.description ?? ''}`
         ).join('\n')
         plantContext += '\n---'
+      } else {
+        // Provide a broader set of plants as context
+        const { data: samplePlants } = await supabase
+          .from('plants')
+          .select('scientific_name, common_names, sunlight, water_needs, maintenance_level, plant_categories(name)')
+          .limit(20)
+
+        if (samplePlants) {
+          plantContext = `\n\n--- SAMPLE PLANTS IN DATABASE ---\n`
+          plantContext += samplePlants.map(p =>
+            `• ${p.scientific_name} (${p.common_names?.[0] ?? '—'}) | ${p.plant_categories?.name ?? 'Unknown'} | Sunlight: ${p.sunlight ?? '?'} | Water: ${p.water_needs ?? '?'}`
+          ).join('\n')
+          plantContext += '\n---'
+        }
       }
     }
 
@@ -366,7 +399,7 @@ app.post('/api/chat', async (req, res) => {
 
     res.json({
       reply,
-      plants: hasConditions ? topPlants.slice(0, 5) : undefined,
+      plants: topPlants.length > 0 ? topPlants.slice(0, 5) : undefined,
     })
   } catch (error) {
     console.error('Chat error:', error)

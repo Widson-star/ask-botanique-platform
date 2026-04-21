@@ -36,7 +36,7 @@ const EXAMPLES = [
 
 function scoreColor(score: number): string {
   if (score >= 80) return '#1a5d5d'
-  if (score >= 60) return '#4caf7d'
+  if (score >= 60) return '#3E9B9B'
   if (score >= 40) return '#f59e0b'
   return '#dc2626'
 }
@@ -159,12 +159,14 @@ export default function TeaserSearch() {
                       <p className={styles.plantSci}>{r.plant.scientific_name}</p>
                       <p className={styles.plantCommon}>{r.plant.common_names?.[0]}</p>
                     </div>
-                    <span
-                      className={styles.scoreBadge}
-                      style={{ background: scoreColor(r.suitability_score) }}
-                    >
-                      {r.suitability_score}/100
-                    </span>
+                    {r.suitability_score !== null && (
+                      <span
+                        className={styles.scoreBadge}
+                        style={{ background: scoreColor(r.suitability_score) }}
+                      >
+                        {r.suitability_score}/100
+                      </span>
+                    )}
                   </div>
 
                   <div className={styles.plantDetails}>

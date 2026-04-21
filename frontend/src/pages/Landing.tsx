@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CloudRain, Sun, Layers, MessageCircle, Leaf, BarChart2, ArrowRight } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import TeaserSearch from '../components/TeaserSearch'
+import TourModal from '../components/TourModal'
 import styles from './Landing.module.css'
 
 const FEATURES = [
@@ -63,9 +65,11 @@ const HERO_IMAGES = [
 
 export default function Landing() {
   const { user } = useAuth()
+  const [tourOpen, setTourOpen] = useState(false)
 
   return (
     <div className={styles.page}>
+      {tourOpen && <TourModal onClose={() => setTourOpen(false)} />}
 
       {/* ── NAV ── */}
       <nav className={styles.nav}>
@@ -113,7 +117,7 @@ export default function Landing() {
             ) : (
               <div className={styles.heroActions}>
                 <Link to="/signup" className={styles.btnPrimary}>Get started free</Link>
-                <Link to="/login" className={styles.btnGhost}>See how it works →</Link>
+                <button className={styles.btnGhost} onClick={() => setTourOpen(true)}>See how it works →</button>
               </div>
             )}
             <div className={styles.heroStats}>
@@ -155,9 +159,9 @@ export default function Landing() {
       <section className={styles.teaserSection}>
         <div className={styles.teaserSectionInner}>
           <p className={styles.teaserSectionLabel}>TRY IT FREE</p>
-          <h2 className={styles.teaserSectionTitle}>Ask the AI plant advisor</h2>
+          <h2 className={styles.teaserSectionTitle}>Get your first plant recommendation — right now</h2>
           <p className={styles.teaserSectionSub}>
-            One free query — no account needed. See what Ask Botanique can do.
+            Describe your site or name a plant. No account needed.
           </p>
           <TeaserSearch />
         </div>
@@ -227,8 +231,18 @@ export default function Landing() {
             <img src="/Ask_Botanique_Logo.png" alt="Ask Botanique" />
             <span>Ask Botanique</span>
           </div>
+          <div className={styles.footerLinks}>
+            <a
+              href="https://www.botaniquedesigners.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.footerOutbound}
+            >
+              Botanique Designers ↗
+            </a>
+          </div>
           <p className={styles.footerCopy}>
-            © {new Date().getFullYear()} Widson Ambaisi · Built with field knowledge from East Africa
+            © {new Date().getFullYear()} Botanique Designers · Nairobi, Kenya
           </p>
         </div>
       </footer>

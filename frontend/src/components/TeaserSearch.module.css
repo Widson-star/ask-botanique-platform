@@ -28,7 +28,7 @@
   border-radius: 16px;
   border: 2px solid #E2E8F0;
   background: #ffffff;
-  color: #0F3D2E;
+  color: #1a5d5d;
   font-size: 1.05rem;
   font-weight: 500;
   font-family: 'Quicksand', sans-serif;
@@ -41,14 +41,14 @@
 }
 
 .input:focus {
-  border-color: #1D9E75;
+  border-color: #3E9B9B;
   box-shadow: 0 0 0 3px rgba(29, 158, 117, 0.08);
 }
 
 .submitBtn {
   white-space: nowrap;
   flex-shrink: 0;
-  background: #0F3D2E !important;
+  background: #1a5d5d !important;
   color: white !important;
   font-weight: 700;
   font-size: 0.97rem;
@@ -64,7 +64,7 @@
 }
 
 .submitBtn:hover:not(:disabled) {
-  background: #1a5d45 !important;
+  background: #145050 !important;
   transform: translateY(-1px);
 }
 
@@ -82,8 +82,8 @@
 }
 
 .exampleBtn {
-  background: #F7FAF8;
-  border: 1px solid #E8F5EE;
+  background: #F0F9F9;
+  border: 1px solid #C8E8E8;
   color: #4A5568;
   padding: 7px 16px;
   border-radius: 999px;
@@ -97,9 +97,9 @@
 }
 
 .exampleBtn:hover {
-  background: #EEF7F2;
-  color: #0F3D2E;
-  border-color: #1D9E75;
+  background: #E4F4F4;
+  color: #1a5d5d;
+  border-color: #3E9B9B;
 }
 
 .error {
@@ -121,8 +121,8 @@
 
 /* AI REPLY */
 .reply {
-  background: #F7FAF8;
-  border-left: 4px solid #1D9E75;
+  background: #F0F9F9;
+  border-left: 4px solid #3E9B9B;
   border-radius: 16px;
   padding: 20px 24px;
   display: flex;
@@ -145,7 +145,7 @@
 
 .replyText p { margin-bottom: 6px; }
 .replyText p:last-child { margin-bottom: 0; }
-.replyText strong { font-weight: 700; color: #0F3D2E; }
+.replyText strong { font-weight: 700; color: #1a5d5d; }
 .replyText em { font-style: italic; }
 .replyText ol, .replyText ul { padding-left: 18px; margin: 6px 0; }
 .replyText li { margin-bottom: 4px; }
@@ -159,7 +159,7 @@
 
 .plantCard {
   background: white;
-  border: 1px solid #E8F5EE;
+  border: 1px solid #C8E8E8;
   border-radius: 16px;
   overflow: hidden;
   position: relative;
@@ -170,7 +170,7 @@
   width: 100%;
   aspect-ratio: 4/3;
   overflow: hidden;
-  background: #F7FAF8;
+  background: #F0F9F9;
 }
 
 .plantImage img {
@@ -186,7 +186,7 @@
   align-items: center;
   justify-content: center;
   font-size: 2.2rem;
-  background: #EEF7F2;
+  background: #E4F4F4;
 }
 
 .plantHeader {
@@ -200,7 +200,7 @@
 .plantSci {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #0F3D2E;
+  color: #1a5d5d;
   font-style: italic;
   line-height: 1.3;
 }
@@ -265,7 +265,7 @@
 
 /* SIGNUP PROMPT */
 .signupPrompt {
-  background: #0F3D2E;
+  background: #1a5d5d;
   border-radius: 16px;
   padding: 24px 28px;
   text-align: center;
@@ -294,7 +294,7 @@
   display: inline-flex;
   align-items: center;
   background: white;
-  color: #0F3D2E;
+  color: #1a5d5d;
   font-weight: 700;
   font-size: 0.95rem;
   padding: 12px 28px;
@@ -310,7 +310,7 @@
 .unlockBtn {
   display: inline-flex;
   align-items: center;
-  background: #1D9E75;
+  background: #3E9B9B;
   color: white;
   font-weight: 700;
   font-size: 0.82rem;
@@ -320,11 +320,11 @@
 }
 
 .unlockBtn:hover {
-  background: #17875f;
+  background: #2E8080;
 }
 
 .promptLogin {
-  color: #7DD4B0;
+  color: #7DCECE;
   font-size: 0.88rem;
   font-weight: 600;
   transition: color 0.2s;
