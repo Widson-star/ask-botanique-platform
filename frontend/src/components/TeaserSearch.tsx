@@ -127,8 +127,6 @@ const TeaserSearch = forwardRef<TeaserSearchHandle, Props>(({ initialQuery = '' 
     runQuery(q)
   }
 
-  const showGate = isGated && result !== null
-
   return (
     <div className={styles.teaser}>
 
