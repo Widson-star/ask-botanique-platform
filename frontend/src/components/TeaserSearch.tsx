@@ -186,7 +186,6 @@ const TeaserSearch = forwardRef<TeaserSearchHandle, Props>(({ initialQuery = '' 
         <div className={styles.results}>
           {result.reply && (
             <div className={styles.reply}>
-              <span className={styles.replyIcon}>🌿</span>
               <div className={styles.replyText}>
                 <ReactMarkdown>{result.reply}</ReactMarkdown>
               </div>

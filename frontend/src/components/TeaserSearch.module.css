@@ -52,9 +52,9 @@
 .input {
   flex: 1;
   padding: 18px 24px;
-  border-radius: 16px;
-  border: 2px solid #E2E8F0;
-  background: #ffffff;
+  border-radius: 4px;
+  border: 1px solid rgba(26, 93, 93, 0.2);
+  background: rgba(245, 241, 232, 0.9);
   color: #1a5d5d;
   font-size: 1.05rem;
   font-weight: 500;
@@ -80,7 +80,7 @@
   font-weight: 700;
   font-size: 0.97rem;
   padding: 18px 28px;
-  border-radius: 12px;
+  border-radius: 4px;
   border: none;
   cursor: pointer;
   font-family: 'Quicksand', sans-serif;
@@ -109,8 +109,8 @@
 }
 
 .exampleBtn {
-  background: #F0F9F9;
-  border: 1px solid #C8E8E8;
+  background: rgba(245, 241, 232, 0.7);
+  border: 1px solid rgba(26, 93, 93, 0.15);
   color: #4A5568;
   padding: 7px 16px;
   border-radius: 999px;
@@ -148,22 +148,13 @@
 
 /* AI REPLY */
 .reply {
-  background: #F0F9F9;
-  border-left: 4px solid #3E9B9B;
-  border-radius: 16px;
+  background: rgba(245, 241, 232, 0.8);
+  border: 1px solid rgba(26, 93, 93, 0.14);
+  border-radius: 4px;
   padding: 20px 24px;
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
   color: #2D3748;
   font-size: 0.97rem;
   line-height: 1.75;
-}
-
-.replyIcon {
-  font-size: 1.2rem;
-  flex-shrink: 0;
-  margin-top: 2px;
 }
 
 .replyText {

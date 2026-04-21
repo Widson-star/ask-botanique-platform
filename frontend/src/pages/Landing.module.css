@@ -6,18 +6,26 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #F0F9F9;
+  background: #F5F1E8;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 39px,
+    rgba(26, 93, 93, 0.065) 39px,
+    rgba(26, 93, 93, 0.065) 40px
+  );
+  background-attachment: fixed;
   font-family: 'Quicksand', sans-serif;
 }
 
-/* ── NAV — white ── */
+/* ── NAV — parchment ── */
 .nav {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(245, 241, 232, 0.96);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid #C8E8E8;
+  border-bottom: 1px solid rgba(26, 93, 93, 0.12);
 }
 
 .navInner {
@@ -75,9 +83,9 @@
   transform: translateY(-1px);
 }
 
-/* ── HERO — with subtle botanical watermark ── */
+/* ── HERO — transparent over global ruled paper ── */
 .hero {
-  background: #F0F9F9;
+  background: transparent;
   padding: 96px 24px 80px;
   position: relative;
   overflow: hidden;
@@ -284,8 +292,8 @@
   position: absolute;
   top: 20px;
   right: -16px;
-  background: #F0F9F9;
-  border: 1px solid #C8E8E8;
+  background: #F5F1E8;
+  border: 1px solid rgba(26, 93, 93, 0.2);
   border-radius: 999px;
   padding: 7px 14px;
   font-size: 0.78rem;
@@ -295,11 +303,11 @@
   z-index: 10;
 }
 
-/* ── TEASER SEARCH SECTION — white ── */
+/* ── TEASER SEARCH SECTION ── */
 .teaserSection {
-  background: #ffffff;
+  background: rgba(0, 0, 0, 0.03);
   padding: 72px 24px 96px;
-  border-top: 1px solid #E8F2F2;
+  border-top: 1px solid rgba(26, 93, 93, 0.1);
 }
 
 .teaserSectionInner {
@@ -336,11 +344,11 @@
   margin-bottom: 16px;
 }
 
-/* ── FEATURES SECTION — white ── */
+/* ── FEATURES SECTION ── */
 .featuresSection {
-  background: #ffffff;
+  background: transparent;
   padding: 96px 24px;
-  border-top: 1px solid #E8F2F2;
+  border-top: 1px solid rgba(26, 93, 93, 0.1);
 }
 
 .sectionInner {
@@ -377,28 +385,64 @@
 }
 
 .featureCard {
-  background: #ffffff;
-  border: 1px solid #C8E8E8;
-  border-radius: 20px;
-  padding: 32px;
+  background: rgba(245, 241, 232, 0.6);
+  border: 1px solid rgba(26, 93, 93, 0.14);
+  border-left: 3px solid transparent;
+  border-radius: 4px;
+  padding: 28px 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  gap: 10px;
+  transition: border-left-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
   cursor: pointer;
   text-align: left;
   font-family: 'Quicksand', sans-serif;
   width: 100%;
+  position: relative;
 }
 
 .featureCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(62, 155, 155, 0.14);
-  border-color: #3E9B9B;
+  border-left-color: #3E9B9B;
+  background: rgba(245, 241, 232, 0.92);
+  transform: translateX(3px);
+}
+
+.featureCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.featureIconWrap {
+  color: #3E9B9B;
+  flex-shrink: 0;
+}
+
+.featureNum {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(26, 93, 93, 0.4);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.featureTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a5d5d;
+  line-height: 1.3;
+}
+
+.featureDesc {
+  font-size: 0.95rem;
+  color: #4A5568;
+  line-height: 1.65;
 }
 
 .featureTry {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #3E9B9B;
   margin-top: auto;
@@ -406,35 +450,11 @@
 }
 .featureCard:hover .featureTry { color: #1a5d5d; }
 
-.featureIconWrap {
-  width: 48px;
-  height: 48px;
-  background: #E4F4F4;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #3E9B9B;
-  flex-shrink: 0;
-}
-
-.featureTitle {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1a5d5d;
-  line-height: 1.3;
-}
-
-.featureDesc {
-  font-size: 0.97rem;
-  color: #4A5568;
-  line-height: 1.65;
-}
-
-/* ── SOCIAL PROOF — #F0F9F9 ── */
+/* ── SOCIAL PROOF ── */
 .proofSection {
-  background: #F0F9F9;
+  background: rgba(0, 0, 0, 0.03);
   padding: 96px 24px;
+  border-top: 1px solid rgba(26, 93, 93, 0.1);
 }
 
 .proofLabel {
@@ -454,10 +474,11 @@
 }
 
 .testimonialCard {
-  background: #ffffff;
-  border-radius: 20px;
+  background: rgba(245, 241, 232, 0.7);
+  border: 1px solid rgba(26, 93, 93, 0.12);
+  border-radius: 4px;
   padding: 32px;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -601,6 +622,59 @@
 .footerCopy {
   font-size: 0.82rem;
   color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── SECTION NUMBER LABEL ── */
+.sectionNum {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: rgba(26, 93, 93, 0.5);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+/* ── MARQUEE BAND ── */
+.marquee {
+  border-top: 1px solid rgba(26, 93, 93, 0.12);
+  border-bottom: 1px solid rgba(26, 93, 93, 0.12);
+  background: #1a5d5d;
+  overflow: hidden;
+  padding: 14px 0;
+}
+
+.marqueeTrack {
+  display: flex;
+  width: max-content;
+  animation: marqueeScroll 36s linear infinite;
+}
+
+.marqueeContent {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+  padding-right: 0;
+}
+
+.marqueeContent span {
+  padding: 0 28px;
+}
+
+.marqueeContent span.marqueeDot {
+  color: #3E9B9B;
+  padding: 0;
+  font-size: 0.5rem;
+}
+
+@keyframes marqueeScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
 /* ── RESPONSIVE ── */

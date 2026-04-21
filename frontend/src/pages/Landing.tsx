@@ -175,9 +175,27 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ── MARQUEE BAND ── */}
+      <div className={styles.marquee} aria-hidden="true">
+        <div className={styles.marqueeTrack}>
+          {[0, 1].map(i => (
+            <div key={i} className={styles.marqueeContent}>
+              <span>East African Plants</span><span className={styles.marqueeDot}>◆</span>
+              <span>AI-Powered Intelligence</span><span className={styles.marqueeDot}>◆</span>
+              <span>Professional Grade</span><span className={styles.marqueeDot}>◆</span>
+              <span>171+ Species</span><span className={styles.marqueeDot}>◆</span>
+              <span>Scored &amp; Explained</span><span className={styles.marqueeDot}>◆</span>
+              <span>Nairobi · Kenya</span><span className={styles.marqueeDot}>◆</span>
+              <span>Free to Start</span><span className={styles.marqueeDot}>◆</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* ── TEASER SEARCH ── */}
       <section className={styles.teaserSection} ref={teaserSectionRef} id="try-it-free">
         <div className={styles.teaserSectionInner}>
+          <p className={styles.sectionNum}>§ 01 — Try It Free</p>
           <p className={styles.teaserSectionLabel}>TRY IT FREE</p>
           <h2 className={styles.teaserSectionTitle}>Get your first plant recommendation — right now</h2>
           <p className={styles.teaserSectionSub}>
@@ -191,6 +209,7 @@ export default function Landing() {
       <section className={styles.featuresSection}>
         <div className={styles.sectionInner}>
           <div className={styles.featuresHeader}>
+            <p className={styles.sectionNum}>§ 02 — Intelligence</p>
             <h2 className={styles.sectionTitle}>Everything you need to choose<br />the right plant</h2>
             <p className={styles.sectionSub}>
               Stop guessing. Our multi-factor scoring engine and AI chat put decades of
@@ -198,14 +217,17 @@ export default function Landing() {
             </p>
           </div>
           <div className={styles.featureGrid}>
-            {FEATURES.map(({ icon: Icon, title, desc, query }) => (
+            {FEATURES.map(({ icon: Icon, title, desc, query }, idx) => (
               <button
                 key={title}
                 className={styles.featureCard}
                 onClick={() => handleFeatureClick(query)}
               >
-                <div className={styles.featureIconWrap}>
-                  <Icon size={22} strokeWidth={1.8} />
+                <div className={styles.featureCardTop}>
+                  <div className={styles.featureIconWrap}>
+                    <Icon size={20} strokeWidth={1.8} />
+                  </div>
+                  <span className={styles.featureNum}>{String(idx + 1).padStart(2, '0')} / Feature</span>
                 </div>
                 <h3 className={styles.featureTitle}>{title}</h3>
                 <p className={styles.featureDesc}>{desc}</p>
@@ -219,6 +241,7 @@ export default function Landing() {
       {/* ── SOCIAL PROOF ── */}
       <section className={styles.proofSection}>
         <div className={styles.sectionInner}>
+          <p className={styles.sectionNum}>§ 03 — Trusted By</p>
           <p className={styles.proofLabel}>Trusted by landscapers across East Africa</p>
           <div className={styles.testimonialGrid}>
             {TESTIMONIALS.map(t => (
