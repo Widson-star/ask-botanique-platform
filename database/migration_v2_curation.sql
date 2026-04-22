@@ -61,14 +61,13 @@ ALTER TABLE plants ADD COLUMN IF NOT EXISTS native_regions     TEXT[];
 -- e.g. ['Mt. Kenya', 'Aberdares', 'Coast', 'Rift Valley', 'Western Kenya',
 --        'Arid North', 'Central Highlands', 'Lake Victoria Basin']
 
--- ── Chat/search helper (searchable text for full-text search) ─
-ALTER TABLE plants ADD COLUMN IF NOT EXISTS search_text       TEXT
-  GENERATED ALWAYS AS (
-    scientific_name || ' ' ||
-    COALESCE(array_to_string(common_names, ' '), '') || ' ' ||
-    COALESCE(array_to_string(swahili_names, ' '), '') || ' ' ||
-    COALESCE(array_to_string(tags, ' '), '')
-  ) STORED;
+-- ── Chat/search helper (populate via trigger or manual update) ─
+-- Note: GENERATED ALWAYS AS rejected for array functions in PG.
+-- Populate with: UPDATE plants SET search_text = scientific_name || ' ' ||
+--   COALESCE(array_to_string(common_names,' '),'') || ' ' ||
+--   COALESCE(array_to_string(swahili_names,' '),'') || ' ' ||
+--   COALESCE(array_to_string(tags,' '),'');
+ALTER TABLE plants ADD COLUMN IF NOT EXISTS search_text       TEXT;
 
 -- ── Indexes for new columns ───────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_plants_tags         ON plants USING GIN(tags);
