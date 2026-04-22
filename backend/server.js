@@ -299,30 +299,67 @@ app.get('/api/recommend', async (req, res) => {
 // Body: { message: string, history: [{role, content}] }
 // =============================
 
-const SYSTEM_PROMPT = `You are the Ask Botanique AI assistant — an expert in East African horticulture and landscaping.
-You help landscapers and gardeners select the right plants based on site conditions like rainfall, soil type, sunlight exposure, and maintenance preferences.
+const SYSTEM_PROMPT = `You are the Ask Botanique AI assistant — a plant specification tool for East African landscapers, not a general horticulture chatbot.
 
-Your knowledge covers 171+ East African plant species. When a user describes their site conditions, extract the key parameters (rainfall in mm, soil type: clay/loam/sandy, sunlight: full sun/partial shade/shade) and use the structured plant data provided to give accurate, actionable advice.
+## Hard rules — these override everything else
 
-Always be specific: cite plant names (both scientific and common), explain suitability scores, highlight match reasons and any warnings.
-If you cannot extract site conditions, ask clarifying questions.
-Keep responses concise, friendly, and practical — you are talking to working landscapers.
-Do not invent plant data; only reference plants from the database context provided.`
+1. **Only recommend plants that appear in the GROUNDING DATA block of the user's message.** Never name a species, cultivar, or common name that is not in that block. If a user asks about a plant that isn't there, say you don't have it in the database yet and offer to recommend similar plants that are.
+2. **Never invent suitability scores, rainfall tolerances, or soil preferences.** Only cite the scores and reasons provided in the GROUNDING DATA. If a field is missing, say so.
+3. **If the GROUNDING DATA block is empty or labelled "NO MATCHES", do not improvise a list from memory.** Instead, ask for the missing site conditions — rainfall (mm/year), soil type (clay / loam / sandy), sunlight (full sun / partial shade / shade) — or ask the user to name a plant they're considering.
+4. **Do not reason from generic plant knowledge learned in training.** If the user asks "what grows in Nairobi?", the answer comes from the GROUNDING DATA, not from training data about jacarandas and bougainvillea.
+
+## How to respond when GROUNDING DATA has matches
+
+- Lead with 2–4 top-ranked species, scientific name first, then common name in parentheses.
+- Cite the suitability score and the match reasons exactly as given.
+- Flag any warnings plainly ("note: prefers better drainage than clay provides").
+- Keep it under ~180 words unless the user asks for more depth.
+
+## Tone
+
+You're talking to working landscape architects and nursery professionals in Kenya. Be direct, specific, and practical. No filler ("Great question!"). No emojis. No hedging like "you might consider" — if the scoring engine ranked it, recommend it.`
+
+// Approx. mean annual rainfall (mm) for common Kenyan locations where
+// landscapers operate. Used as a fallback when the user mentions a place
+// but not a number. Values are rough — the scoring engine tolerates this.
+const LOCATION_RAINFALL = {
+  nairobi: 950, karen: 1000, runda: 1000, westlands: 950, kilimani: 950,
+  nanyuki: 700, kitale: 1200, eldoret: 1050, nakuru: 900, naivasha: 650,
+  mombasa: 1050, malindi: 950, diani: 1100, kilifi: 1050,
+  kisumu: 1200, kakamega: 1800,
+  machakos: 750, makueni: 600, kitui: 650,
+  marsabit: 400, turkana: 250, lodwar: 200,
+}
 
 function extractConditions(message) {
   const text = message.toLowerCase()
   const conditions = {}
 
+  // ── Rainfall — explicit mm, then location fallback ──
   const rainfallMatch = text.match(/(\d{3,4})\s*mm/)
-  if (rainfallMatch) conditions.rainfall = parseInt(rainfallMatch[1])
+  if (rainfallMatch) {
+    conditions.rainfall = parseInt(rainfallMatch[1])
+  } else {
+    for (const [place, mm] of Object.entries(LOCATION_RAINFALL)) {
+      if (text.includes(place)) { conditions.rainfall = mm; break }
+    }
+    // Qualitative fallbacks
+    if (!conditions.rainfall) {
+      if (/\b(arid|very dry|semi[- ]?arid|drylands?)\b/.test(text)) conditions.rainfall = 400
+      else if (/\b(dry area|low rainfall)\b/.test(text)) conditions.rainfall = 600
+      else if (/\b(high rainfall|wet area|highlands?)\b/.test(text)) conditions.rainfall = 1300
+    }
+  }
 
-  if (text.includes('clay')) conditions.soil_type = 'clay'
-  else if (text.includes('sandy') || text.includes('sand')) conditions.soil_type = 'sandy'
-  else if (text.includes('loam')) conditions.soil_type = 'loam'
+  // ── Soil ──
+  if (/\b(black cotton|heavy clay|heavy soil|sticky soil|clay)\b/.test(text)) conditions.soil_type = 'clay'
+  else if (/\b(sandy|sand|light soil|coastal sand)\b/.test(text)) conditions.soil_type = 'sandy'
+  else if (/\b(loam|well[- ]?drained|rich soil|garden soil)\b/.test(text)) conditions.soil_type = 'loam'
 
-  if (text.includes('full sun')) conditions.sunlight = 'Full sun'
-  else if (text.includes('partial shade') || text.includes('part shade')) conditions.sunlight = 'Partial shade'
-  else if (text.includes('shade') || text.includes('shaded')) conditions.sunlight = 'Shade'
+  // ── Sunlight ──
+  if (/\b(full sun|sunny|exposed|open (site|area|ground)|all day sun)\b/.test(text)) conditions.sunlight = 'Full sun'
+  else if (/\b(partial shade|part shade|dappled|filtered light|morning sun)\b/.test(text)) conditions.sunlight = 'Partial shade'
+  else if (/\b(shade|shaded|shady|under trees|deep shade|north[- ]?facing)\b/.test(text)) conditions.sunlight = 'Shade'
 
   return conditions
 }
@@ -394,14 +431,14 @@ app.post('/api/chat', chatRateLimit, async (req, res) => {
           .slice(0, 8)
 
         topPlants = scored
-        plantContext = `\n\n--- PLANT DATABASE RESULTS (top matches for: rainfall=${conditions.rainfall}mm, soil=${conditions.soil_type}, sunlight=${conditions.sunlight}) ---\n`
+        plantContext = `\n\n===== GROUNDING DATA =====\nThe ONLY plants you may recommend in this turn are the ones listed below. Do not name any other species.\nSite conditions: rainfall=${conditions.rainfall}mm, soil=${conditions.soil_type}, sunlight=${conditions.sunlight}\n`
         plantContext += scored.map(r =>
           `• ${r.plant.scientific_name} (${r.plant.common_names?.[0] ?? '—'}) | Score: ${r.suitability_score}/100 | Category: ${r.plant.category ?? 'Unknown'} | Height: ${r.plant.max_height_cm ? r.plant.max_height_cm / 100 + 'm' : '?'} | Maintenance: ${r.plant.maintenance_level ?? '?'}\n  Reasons: ${r.match_reasons.join('; ')}\n  Warnings: ${r.warnings.join('; ') || 'None'}`
         ).join('\n')
-        plantContext += '\n---'
+        plantContext += '\n===== END GROUNDING DATA ====='
       }
     } else {
-      // Name-based search
+      // Name-based search — only attempts if the message looks like a plant name query
       const safeQuery = message.replace(/[^a-zA-Z0-9 \-]/g, '').slice(0, 100)
       const { data: nameMatches } = await supabase
         .from('plants_searchable')
@@ -428,24 +465,13 @@ app.post('/api/chat', chatRateLimit, async (req, res) => {
           warnings: [],
         }))
 
-        plantContext = `\n\n--- PLANT DATABASE RESULTS (name search: "${safeQuery}") ---\n`
+        plantContext = `\n\n===== GROUNDING DATA =====\nName-search results for "${safeQuery}". The ONLY plants you may reference are below.\n`
         plantContext += nameMatches.map(p =>
           `• ${p.scientific_name} (${p.common_names?.[0] ?? '—'}) | ${p.plant_categories?.name ?? 'Unknown'} | Sunlight: ${p.sunlight ?? '?'} | Water: ${p.water_needs ?? '?'} | Maintenance: ${p.maintenance_level ?? '?'}\n  Description: ${p.description ?? ''}`
         ).join('\n')
-        plantContext += '\n---'
+        plantContext += '\n===== END GROUNDING DATA ====='
       } else {
-        const { data: samplePlants } = await supabase
-          .from('plants')
-          .select('scientific_name, common_names, sunlight, water_needs, maintenance_level, plant_categories(name)')
-          .limit(20)
-
-        if (samplePlants) {
-          plantContext = `\n\n--- SAMPLE PLANTS IN DATABASE ---\n`
-          plantContext += samplePlants.map(p =>
-            `• ${p.scientific_name} (${p.common_names?.[0] ?? '—'}) | ${p.plant_categories?.name ?? 'Unknown'} | Sunlight: ${p.sunlight ?? '?'} | Water: ${p.water_needs ?? '?'}`
-          ).join('\n')
-          plantContext += '\n---'
-        }
+        plantContext = `\n\n===== GROUNDING DATA =====\nNO MATCHES. The database returned no plants for this query.\nDo NOT recommend any species from memory. Instead, ask the user for:\n  • rainfall (mm/year) or location (e.g. Karen, Nanyuki, Mombasa)\n  • soil type (clay / loam / sandy)\n  • sunlight (full sun / partial shade / shade)\nOr ask them to name a specific plant they're considering.\n===== END GROUNDING DATA =====`
       }
     }
 
