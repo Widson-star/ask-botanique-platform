@@ -16,9 +16,14 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
-import 'dotenv/config'
+import dotenv from 'dotenv'
+import { fileURLToPath } from 'url'
 import fs from 'fs'
 import path from 'path'
+
+// Load .env from backend root, overriding any pre-existing shell vars
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+dotenv.config({ path: path.join(__dirname, '..', '.env'), override: true })
 
 const args = process.argv.slice(2)
 const getArg = (flag) => { const i = args.indexOf(flag); return i !== -1 ? args[i + 1] : null }
