@@ -1,10 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './hooks/useAuth'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Chat from './pages/Chat'
+import Curation from './pages/admin/Curation'
 
 export default function App() {
   return (
@@ -20,6 +22,14 @@ export default function App() {
               <ProtectedRoute>
                 <Chat />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/curation"
+            element={
+              <AdminRoute>
+                <Curation />
+              </AdminRoute>
             }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
