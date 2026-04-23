@@ -9,6 +9,10 @@
 ALTER TABLE plants ADD COLUMN IF NOT EXISTS min_rainfall      INT;
 ALTER TABLE plants ADD COLUMN IF NOT EXISTS max_rainfall      INT;
 
+-- ── Height range (replaces single max_height_cm) ─────────────
+ALTER TABLE plants ADD COLUMN IF NOT EXISTS min_height_cm     INT;
+-- max_height_cm already exists in original schema
+
 -- ── Soil types array (replaces junction table for scoring) ───
 ALTER TABLE plants ADD COLUMN IF NOT EXISTS soil_types        TEXT[];
 

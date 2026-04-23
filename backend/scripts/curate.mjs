@@ -88,7 +88,8 @@ Return ONLY this JSON object with ALL fields present (use null if unknown):
   "soil_types": ["Clay", "Loam", "Sandy"] (include all that apply),
   "water_needs": "Low" | "Moderate" | "High",
   "maintenance_level": "Low" | "Medium" | "High",
-  "max_height_cm": integer or null,
+  "min_height_cm": integer (typical minimum mature height in cm) or null,
+  "max_height_cm": integer (typical maximum mature height in cm) or null,
   "growth_rate": "Slow" | "Moderate" | "Fast",
   "description": "2-3 sentence practical description for a landscape architect. Mention key features, notable uses, and any Kenya-specific context.",
   "confidence_score": 0.0-1.0 (your confidence in the accuracy of this profile)

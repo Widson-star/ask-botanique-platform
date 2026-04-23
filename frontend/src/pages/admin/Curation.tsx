@@ -22,6 +22,7 @@ interface Plant {
   soil_types: string[] | null
   water_needs: string | null
   maintenance_level: string | null
+  min_height_cm: number | null
   max_height_cm: number | null
   growth_rate: string | null
   description: string | null
@@ -298,9 +299,13 @@ function PlantCard({ plant, processing, onApprove, onReject, onUndo }: CardProps
         </div>
 
         <div className={styles.fieldGroup}>
-          <span className={styles.fieldLabel}>Max height</span>
+          <span className={styles.fieldLabel}>Height range</span>
           <span className={`${styles.fieldValue} ${!plant.max_height_cm ? styles.missing : ''}`}>
-            {plant.max_height_cm ? `${(plant.max_height_cm / 100).toFixed(0)} m` : 'Not specified'}
+            {plant.min_height_cm && plant.max_height_cm
+              ? `${(plant.min_height_cm / 100).toFixed(0)}–${(plant.max_height_cm / 100).toFixed(0)} m`
+              : plant.max_height_cm
+              ? `up to ${(plant.max_height_cm / 100).toFixed(0)} m`
+              : 'Not specified'}
           </span>
         </div>
 
