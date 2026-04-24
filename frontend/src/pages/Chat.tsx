@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import ChatMessage from '../components/ChatMessage'
 import type { ChatMessage as ChatMessageType, ChatResponse } from '../types'
@@ -36,18 +36,30 @@ function greeting(count: number | null) {
 
 export default function Chat() {
   const { user, session, signOut } = useAuth()
-  const [messages, setMessages] = useState<ChatMessageType[]>([])
+  const [searchParams] = useSearchParams()
+  const plantParam = searchParams.get('plant')
 
-  useEffect(() => {
-    fetchSpeciesCount().then(count => {
-      setMessages([{ id: generateId(), role: 'assistant', content: greeting(count), timestamp: new Date() }])
-    })
-  }, [])
+  const [messages, setMessages] = useState<ChatMessageType[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Load greeting + pre-fill from ?plant= param
+  useEffect(() => {
+    fetchSpeciesCount().then(count => {
+      setMessages([{
+        id: generateId(),
+        role: 'assistant',
+        content: greeting(count),
+        timestamp: new Date(),
+      }])
+      if (plantParam) {
+        setInput(`Tell me about ${plantParam} — is it a good fit for my site?`)
+      }
+    })
+  }, [plantParam])
 
   // Auto-scroll to latest message
   useEffect(() => {
@@ -79,7 +91,6 @@ export default function Chat() {
 
     try {
       const history = messages.map(m => ({ role: m.role, content: m.content }))
-
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
 
@@ -96,15 +107,13 @@ export default function Chat() {
 
       const data: ChatResponse = await res.json()
 
-      const assistantMsg: ChatMessageType = {
+      setMessages(prev => [...prev, {
         id: generateId(),
         role: 'assistant',
         content: data.reply,
         plants: data.plants,
         timestamp: new Date(),
-      }
-
-      setMessages(prev => [...prev, assistantMsg])
+      }])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     } finally {
@@ -124,51 +133,51 @@ export default function Chat() {
     }
   }
 
+  function resetChat() {
+    setMessages([{
+      id: generateId(),
+      role: 'assistant',
+      content: 'New conversation started. Tell me about your site conditions and I\'ll find the right plants for you.',
+      timestamp: new Date(),
+    }])
+    setInput('')
+    setError(null)
+  }
+
   return (
-    <div className={styles.layout}>
-      {/* ── SIDEBAR ── */}
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarTop}>
-          <Link to="/" className={styles.brand}>
-            <img src="/Ask_Botanique_Logo.png" alt="Ask Botanique" />
-            <span>Ask Botanique</span>
-          </Link>
+    <div className={styles.page}>
 
-          <button
-            className={styles.newChat}
-            onClick={() =>
-              setMessages([
-                {
-                  id: generateId(),
-                  role: 'assistant',
-                  content:
-                    'New conversation started. Tell me about your site conditions and I\'ll find the right plants for you.',
-                  timestamp: new Date(),
-                },
-              ])
-            }
-          >
-            + New chat
-          </button>
+      {/* ── TOP NAV ── */}
+      <nav className={styles.nav}>
+        <Link to="/" className={styles.brand}>
+          <img src="/Ask_Botanique_Logo.png" alt="Ask Botanique" />
+          <span>Ask Botanique</span>
+        </Link>
+
+        <div className={styles.navCenter}>
+          <Link to="/explore" className={styles.navLink}>← Browse plants</Link>
+          <button className={styles.newChatBtn} onClick={resetChat}>+ New chat</button>
         </div>
 
-        <div className={styles.sidebarBottom}>
-          <div className={styles.userInfo}>
-            <div className={styles.userAvatar}>
-              {user?.email?.[0]?.toUpperCase() ?? '?'}
-            </div>
-            <div className={styles.userDetails}>
-              <p className={styles.userEmail}>{user?.email}</p>
-            </div>
+        <div className={styles.navRight}>
+          <div className={styles.userAvatar}>{user?.email?.[0]?.toUpperCase() ?? '?'}</div>
+          <span className={styles.userEmail}>{user?.email}</span>
+          <button className={styles.signOutBtn} onClick={() => signOut()}>Sign out</button>
+        </div>
+      </nav>
+
+      {/* ── CHAT PANEL ── */}
+      <main className={styles.panel}>
+
+        {/* Context banner when arriving from a plant card */}
+        {plantParam && messages.length <= 1 && (
+          <div className={styles.contextBanner}>
+            <span>🌿</span>
+            <span>Asking about <strong>{plantParam}</strong></span>
+            <Link to="/explore" className={styles.contextBack}>← Back to explore</Link>
           </div>
-          <button className={styles.signOutBtn} onClick={() => signOut()}>
-            Sign out
-          </button>
-        </div>
-      </aside>
+        )}
 
-      {/* ── MAIN CHAT AREA ── */}
-      <main className={styles.main}>
         {/* Messages */}
         <div className={styles.messages}>
           {messages.map(msg => (
@@ -184,53 +193,48 @@ export default function Chat() {
           )}
 
           {error && (
-            <div className={styles.errorBanner}>
-              ⚠️ {error}
-            </div>
+            <div className={styles.errorBanner}>⚠️ {error}</div>
           )}
 
           <div ref={bottomRef} />
         </div>
 
-        {/* Suggested prompts — only show at start */}
-        {messages.length === 1 && (
+        {/* Suggested prompts — only at conversation start */}
+        {messages.length === 1 && !plantParam && (
           <div className={styles.suggestions}>
             {SUGGESTED_PROMPTS.map(p => (
-              <button
-                key={p}
-                className={styles.suggestionChip}
-                onClick={() => send(p)}
-              >
-                {p}
-              </button>
+              <button key={p} className={styles.chip} onClick={() => send(p)}>{p}</button>
             ))}
           </div>
         )}
 
-        {/* Input bar */}
-        <form className={styles.inputBar} onSubmit={handleSubmit}>
-          <textarea
-            ref={textareaRef}
-            className={styles.textarea}
-            rows={1}
-            placeholder="Describe your site or ask anything about plants…"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            className={styles.sendBtn}
-            disabled={!input.trim() || loading}
-            aria-label="Send message"
-          >
-            {loading ? <span className="spinner" /> : '↑'}
-          </button>
-        </form>
-        <p className={styles.disclaimer}>
-          Ask Botanique may make mistakes. Always verify recommendations with a local horticulturist.
-        </p>
+        {/* Input */}
+        <div className={styles.inputWrap}>
+          <form className={styles.inputBar} onSubmit={handleSubmit}>
+            <textarea
+              ref={textareaRef}
+              className={styles.textarea}
+              rows={1}
+              placeholder="Describe your site or ask anything about plants…"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={loading}
+            />
+            <button
+              type="submit"
+              className={styles.sendBtn}
+              disabled={!input.trim() || loading}
+              aria-label="Send"
+            >
+              {loading ? '…' : '↑'}
+            </button>
+          </form>
+          <p className={styles.disclaimer}>
+            Ask Botanique may make mistakes. Always verify with a local horticulturist.
+          </p>
+        </div>
+
       </main>
     </div>
   )
