@@ -37,11 +37,9 @@ function greeting(count: number | null) {
 export default function Chat() {
   const { user, session, signOut } = useAuth()
   const [messages, setMessages] = useState<ChatMessageType[]>([])
-  const [speciesCount, setSpeciesCount] = useState<number | null>(null)
 
   useEffect(() => {
     fetchSpeciesCount().then(count => {
-      setSpeciesCount(count)
       setMessages([{ id: generateId(), role: 'assistant', content: greeting(count), timestamp: new Date() }])
     })
   }, [])
