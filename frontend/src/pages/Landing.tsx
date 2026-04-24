@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { CloudRain, Sun, Layers, MessageCircle, Leaf, BarChart2, ArrowRight } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
@@ -72,8 +72,17 @@ const HERO_IMAGES = [
 export default function Landing() {
   const { user } = useAuth()
   const [tourOpen, setTourOpen] = useState(false)
+  const [speciesCount, setSpeciesCount] = useState<number | null>(null)
   const teaserRef = useRef<TeaserSearchHandle>(null)
   const teaserSectionRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const API_BASE = import.meta.env.VITE_API_URL ?? ''
+    fetch(`${API_BASE}/api/stats`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => d?.approved_species_count && setSpeciesCount(d.approved_species_count))
+      .catch(() => {})
+  }, [])
 
   function handleGetStarted() {
     teaserSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -143,7 +152,7 @@ export default function Landing() {
               </div>
             )}
             <div className={styles.heroStats}>
-              <span>171+ Species</span>
+              <span>{speciesCount ? `${speciesCount}+ Species` : '600+ Species'}</span>
               <span className={styles.statDot}>·</span>
               <span>5,000 target</span>
               <span className={styles.statDot}>·</span>
@@ -182,7 +191,7 @@ export default function Landing() {
               <span>East African Plants</span><span className={styles.marqueeDot}>◆</span>
               <span>AI-Powered Intelligence</span><span className={styles.marqueeDot}>◆</span>
               <span>Professional Grade</span><span className={styles.marqueeDot}>◆</span>
-              <span>171+ Species</span><span className={styles.marqueeDot}>◆</span>
+              <span>{speciesCount ? `${speciesCount}+ Species` : '600+ Species'}</span><span className={styles.marqueeDot}>◆</span>
               <span>Scored &amp; Explained</span><span className={styles.marqueeDot}>◆</span>
               <span>Nairobi · Kenya</span><span className={styles.marqueeDot}>◆</span>
               <span>Free to Start</span><span className={styles.marqueeDot}>◆</span>

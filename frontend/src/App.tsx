@@ -6,6 +6,7 @@ import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Chat from './pages/Chat'
+import Explore from './pages/Explore'
 import Curation from './pages/admin/Curation'
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/explore" element={<Explore />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route

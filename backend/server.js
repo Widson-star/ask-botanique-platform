@@ -130,6 +130,85 @@ app.get('/', (req, res) => {
 })
 
 // =============================
+// EXPLORE — filter + search
+// GET /api/explore?q=flowering&tags=tree,indigenous&origin=indigenous&ecological_zone=highland&sunlight=full+sun&maintenance=low&limit=48&offset=0
+// =============================
+app.get('/api/explore', async (req, res) => {
+  const {
+    q,
+    tags,
+    origin,
+    ecological_zone,
+    sunlight,
+    maintenance,
+    limit: rawLimit = '48',
+    offset: rawOffset = '0',
+  } = req.query
+
+  const limit = Math.min(Math.max(parseInt(rawLimit, 10) || 48, 1), 100)
+  const offset = Math.max(parseInt(rawOffset, 10) || 0, 0)
+
+  try {
+    let query = supabase
+      .from('plants')
+      .select(
+        'id, scientific_name, common_names, tags, origin, ecological_zone, sunlight, maintenance_level, min_rainfall, max_rainfall, image_url, thumbnail_url, description',
+        { count: 'exact' }
+      )
+      .eq('review_status', 'approved')
+
+    if (q) {
+      const safe = String(q).replace(/[^a-zA-Z0-9 '\-]/g, '').slice(0, 100)
+      query = query.or(
+        `scientific_name.ilike.%${safe}%,search_text.ilike.%${safe}%`
+      )
+    }
+
+    if (tags) {
+      const tagList = String(tags)
+        .split(',')
+        .map(t => t.trim().toLowerCase())
+        .filter(Boolean)
+        .slice(0, 10)
+      if (tagList.length > 0) query = query.overlaps('tags', tagList)
+    }
+
+    if (origin) query = query.eq('origin', String(origin))
+    if (ecological_zone) query = query.eq('ecological_zone', String(ecological_zone))
+    if (sunlight) query = query.eq('sunlight', String(sunlight))
+    if (maintenance) query = query.eq('maintenance_level', String(maintenance))
+
+    query = query
+      .order('confidence_score', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    const { data, error, count } = await query
+    if (error) throw error
+
+    res.json({ plants: data ?? [], total: count ?? 0 })
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Internal server error' })
+  }
+})
+
+// =============================
+// STATS — live species count
+// GET /api/stats
+// =============================
+app.get('/api/stats', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('public_stats')
+      .select('*')
+      .single()
+    if (error) throw error
+    res.json(data)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// =============================
 // CATEGORY
 // GET /plants/category/:category
 // =============================

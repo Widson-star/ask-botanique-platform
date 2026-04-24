@@ -55,7 +55,7 @@ const STEPS = [
   {
     label: '03 / 03',
     title: 'Ask follow-up questions',
-    body: 'Narrow down, compare, or pivot — ask the AI anything about the results. It reasons across 171+ East African species.',
+    body: 'Narrow down, compare, or pivot — ask the AI anything about the results. It reasons across hundreds of East African species.',
     visual: (
       <div className={styles.mockChat}>
         <div className={styles.mockBubbleUser}>Which of these needs the least watering?</div>

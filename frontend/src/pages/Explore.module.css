@@ -1,0 +1,512 @@
+/* ============================
+   EXPLORE PAGE
+   ============================ */
+
+.page {
+  min-height: 100vh;
+  background: var(--color-paper);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── NAV ── */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 56px;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+}
+
+.brand img {
+  height: 28px;
+  width: auto;
+  border-radius: 4px;
+}
+
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loginLink {
+  color: rgba(255,255,255,0.8);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.loginLink:hover { color: #fff; }
+
+.signupBtn, .chatBtn {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: var(--radius-md);
+  padding: 6px 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.signupBtn:hover, .chatBtn:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+/* ── FILTER BAR ── */
+.filterBar {
+  position: sticky;
+  top: 56px;
+  z-index: 90;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 14px 28px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Search */
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 40px 10px 42px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-family: var(--font);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text);
+  background: var(--color-paper);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.searchInput:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(62,155,155,0.12);
+  background: #fff;
+}
+.searchInput::placeholder { color: var(--color-text-muted); }
+
+.clearInput {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.clearInput:hover { color: var(--color-text); }
+
+/* Quick tag chips */
+.chipScroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin: 0 -28px;
+  padding: 0 28px;
+}
+.chipScroll::-webkit-scrollbar { display: none; }
+
+.chipRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  width: max-content;
+}
+
+.chip {
+  flex-shrink: 0;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-paper);
+  color: var(--color-text-muted);
+  font-family: var(--font);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+.chip:hover {
+  border-color: var(--color-accent);
+  color: var(--color-primary);
+  background: var(--color-surface-alt);
+}
+.chipActive {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: #fff !important;
+}
+
+/* Zone + Origin pills */
+.pillSection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  align-items: center;
+}
+
+.pillGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pillLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  margin-right: 2px;
+}
+
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pill {
+  padding: 3px 12px;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+.pill:hover {
+  border-color: var(--color-accent);
+  color: var(--color-primary);
+}
+.pillActive {
+  background: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
+  color: #fff !important;
+}
+
+/* Results meta */
+.resultsMeta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 2px;
+}
+
+.resultsCount {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.clearAll {
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  font-family: var(--font);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.clearAll:hover { color: var(--color-primary); }
+
+/* ── MAIN / GRID ── */
+.main {
+  flex: 1;
+  padding: 24px 28px 40px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+/* ── PLANT CARD ── */
+.card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.cardImg {
+  position: relative;
+  height: 160px;
+  background: var(--color-surface-alt);
+  overflow: hidden;
+}
+.cardImg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cardImgPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-surface-alt) 0%, var(--color-paper-alt) 100%);
+}
+.cardImgPlaceholder svg {
+  width: 48px;
+  height: 48px;
+  color: var(--color-primary);
+  opacity: 0.4;
+}
+
+.zoneBadge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(26,93,93,0.85);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+
+.cardBody {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.cardName {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+.cardSci {
+  font-size: 0.775rem;
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.cardTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.cardTag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-surface-alt);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.metaPill {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-paper);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  text-transform: capitalize;
+}
+
+/* Origin color coding */
+.origin_indigenous { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.origin_exotic     { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.origin_naturalised{ background: #e0f2fe; color: #0c4a6e; border-color: #bae6fd; }
+.origin_invasive   { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+
+.metaRain {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.cardChatLink {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color 0.12s;
+}
+.cardChatLink:hover { color: var(--color-primary); }
+
+/* ── SKELETON ── */
+.skeleton {
+  height: 260px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(90deg, var(--color-border) 25%, var(--color-surface-alt) 50%, var(--color-border) 75%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ── EMPTY STATE ── */
+.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.emptyAction {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 24px;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── LOAD MORE ── */
+.loadMore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 0 8px;
+}
+
+.loadMoreBtn {
+  background: #fff;
+  border: 1.5px solid var(--color-primary);
+  color: var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: 10px 32px;
+  font-family: var(--font);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.loadMoreBtn:hover {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.loadMoreMeta {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.loadingMore {
+  text-align: center;
+  padding: 24px;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+/* ── FOOTER ── */
+.footer {
+  text-align: center;
+  padding: 16px 24px 24px;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1200px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .nav, .filterBar, .main { padding-left: 16px; padding-right: 16px; }
+  .chipScroll { margin: 0 -16px; padding: 0 16px; }
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .pillSection { gap: 10px 16px; }
+}
+
+@media (max-width: 560px) {
+  .grid { grid-template-columns: 1fr; }
+  .filterBar { padding: 12px 16px 8px; }
+  .pillSection { flex-direction: column; align-items: flex-start; }
+}

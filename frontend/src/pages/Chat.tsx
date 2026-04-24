@@ -7,6 +7,17 @@ import styles from './Chat.module.css'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
 
+async function fetchSpeciesCount(): Promise<number | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/stats`)
+    if (!res.ok) return null
+    const d = await res.json()
+    return d?.approved_species_count ?? null
+  } catch {
+    return null
+  }
+}
+
 const SUGGESTED_PROMPTS = [
   'What trees grow well in Nairobi with clay soil and 800mm rainfall?',
   'I need a groundcover for full shade and sandy soil near Mombasa.',
@@ -18,17 +29,22 @@ function generateId() {
   return Math.random().toString(36).slice(2)
 }
 
+function greeting(count: number | null) {
+  const n = count ? `${count}+` : '600+'
+  return `Hello! I'm your Ask Botanique AI assistant. I can help you find the perfect plants for your site conditions across East Africa.\n\nTell me about your site — rainfall, soil type, sunlight, and what you're trying to achieve — and I'll recommend the best options from our database of ${n} species.`
+}
+
 export default function Chat() {
   const { user, session, signOut } = useAuth()
-  const [messages, setMessages] = useState<ChatMessageType[]>([
-    {
-      id: generateId(),
-      role: 'assistant',
-      content:
-        'Hello! I\'m your Ask Botanique AI assistant. I can help you find the perfect plants for your site conditions across East Africa.\n\nTell me about your site — rainfall, soil type, sunlight, and what you\'re trying to achieve — and I\'ll recommend the best options from our database of 171+ species.',
-      timestamp: new Date(),
-    },
-  ])
+  const [messages, setMessages] = useState<ChatMessageType[]>([])
+  const [speciesCount, setSpeciesCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    fetchSpeciesCount().then(count => {
+      setSpeciesCount(count)
+      setMessages([{ id: generateId(), role: 'assistant', content: greeting(count), timestamp: new Date() }])
+    })
+  }, [])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
