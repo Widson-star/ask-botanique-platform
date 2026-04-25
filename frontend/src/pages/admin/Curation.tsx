@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import styles from './Curation.module.css'
 
+const API_BASE = import.meta.env.VITE_API_URL ?? ''
+
 // ── Types ──────────────────────────────────────────────────────────────────
 interface Plant {
   id: string
@@ -33,6 +35,20 @@ interface Plant {
 }
 
 type FilterStatus = 'draft' | 'approved' | 'rejected' | 'all'
+type AdminView = 'plants' | 'nurseries'
+
+interface AdminNursery {
+  id: string
+  name: string
+  slug: string
+  county: string | null
+  specialties: string[] | null
+  is_verified: boolean
+  is_active: boolean
+  created_at: string
+  owner_user_id: string | null
+  profiles: { email: string } | null
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function confidenceLabel(score: number | null) {
@@ -58,11 +74,20 @@ function altitudeLabel(min: number | null, max: number | null) {
 // ── Main component ─────────────────────────────────────────────────────────
 export default function Curation() {
   const navigate = useNavigate()
+  const [adminView, setAdminView] = useState<AdminView>('plants')
+
+  // ── Plants state ───────────────────────────────────────────────────────
   const [plants, setPlants] = useState<Plant[]>([])
   const [filter, setFilter] = useState<FilterStatus>('draft')
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState<Set<string>>(new Set())
   const [stats, setStats] = useState({ draft: 0, approved: 0, rejected: 0, total: 0 })
+
+  // ── Nurseries state ────────────────────────────────────────────────────
+  const [nurseries, setNurseries] = useState<AdminNursery[]>([])
+  const [nurseriesLoading, setNurseriesLoading] = useState(false)
+  const [nurseriesError, setNurseriesError] = useState<string | null>(null)
+  const [nurseriesProcessing, setNurseriesProcessing] = useState<Set<string>>(new Set())
 
   // ── Fetch stats ────────────────────────────────────────────────────────
   const fetchStats = useCallback(async () => {
@@ -91,6 +116,53 @@ export default function Curation() {
   }, [filter])
 
   useEffect(() => { fetchPlants(); fetchStats() }, [fetchPlants, fetchStats])
+
+  // ── Fetch nurseries ────────────────────────────────────────────────────
+  const fetchNurseries = useCallback(async () => {
+    setNurseriesLoading(true)
+    setNurseriesError(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) throw new Error('Not authenticated')
+      const res = await fetch(`${API_BASE}/api/admin/nurseries`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const j = await res.json()
+      if (!res.ok) throw new Error(j?.error || `Server error ${res.status}`)
+      setNurseries(j.nurseries ?? [])
+    } catch (err) {
+      setNurseriesError(err instanceof Error ? err.message : 'Could not load nurseries.')
+    } finally {
+      setNurseriesLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (adminView === 'nurseries') fetchNurseries()
+  }, [adminView, fetchNurseries])
+
+  // ── Toggle nursery verified / active ──────────────────────────────────
+  async function patchNursery(id: string, patch: { is_verified?: boolean; is_active?: boolean }) {
+    setNurseriesProcessing(prev => new Set(prev).add(id))
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) throw new Error('Not authenticated')
+      const res = await fetch(`${API_BASE}/api/admin/nurseries/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(patch),
+      })
+      const j = await res.json()
+      if (!res.ok) throw new Error(j?.error || 'Update failed')
+      setNurseries(prev => prev.map(n => n.id === id ? { ...n, ...j.nursery } : n))
+    } catch (err) {
+      setNurseriesError(err instanceof Error ? err.message : 'Update failed.')
+    } finally {
+      setNurseriesProcessing(prev => { const s = new Set(prev); s.delete(id); return s })
+    }
+  }
 
   // ── Approve / Reject ───────────────────────────────────────────────────
   async function updateStatus(id: string, status: 'approved' | 'rejected' | 'draft') {
@@ -131,6 +203,23 @@ export default function Curation() {
         </div>
         <button className={styles.backLink} onClick={() => navigate('/chat')}>
           ← Back to chat
+        </button>
+      </div>
+
+      {/* View toggle */}
+      <div className={styles.filterBar} style={{ borderBottom: '2px solid rgba(26,93,93,0.12)', paddingBottom: 0 }}>
+        <span className={styles.filterLabel}>View:</span>
+        <button
+          className={`${styles.filterBtn} ${adminView === 'plants' ? styles.active : ''}`}
+          onClick={() => setAdminView('plants')}
+        >
+          Plants
+        </button>
+        <button
+          className={`${styles.filterBtn} ${adminView === 'nurseries' ? styles.active : ''}`}
+          onClick={() => setAdminView('nurseries')}
+        >
+          Nurseries {nurseries.length > 0 ? `(${nurseries.length})` : ''}
         </button>
       </div>
 
@@ -177,39 +266,164 @@ export default function Curation() {
 
       {/* Content */}
       <div className={styles.content}>
-        <div className={styles.sectionHeader}>
-          <span className={styles.sectionNumber}>§ {filter.toUpperCase()}</span>
-          <span className={styles.sectionTitle}>
-            {filter === 'draft' ? 'Pending Review' : filter === 'approved' ? 'Live in Database' : filter === 'rejected' ? 'Rejected' : 'All Species'}
-          </span>
-          <span className={styles.count}>{visiblePlants.length} {visiblePlants.length === 1 ? 'record' : 'records'}</span>
-        </div>
 
-        {loading ? (
-          <div className={styles.loading}>Loading species…</div>
-        ) : visiblePlants.length === 0 ? (
-          <div className={styles.empty}>
-            <div className={styles.emptyIcon}>📋</div>
-            <div className={styles.emptyTitle}>
-              {filter === 'draft' ? 'Queue is clear' : `No ${filter} species`}
+        {/* ── NURSERIES PANEL ── */}
+        {adminView === 'nurseries' && (
+          <>
+            <div className={styles.sectionHeader}>
+              <span className={styles.sectionNumber}>§ NURSERIES</span>
+              <span className={styles.sectionTitle}>Nursery Verification</span>
+              <span className={styles.count}>{nurseries.length} registered</span>
             </div>
-            <div className={styles.emptyText}>
-              {filter === 'draft'
-                ? 'Run the curation script to populate the queue: node scripts/curate.mjs --batch ...'
-                : 'No records match this filter.'}
+            {nurseriesError && (
+              <div style={{ background: '#fdecec', color: '#8a1f1f', padding: '10px 14px', borderRadius: 8, marginBottom: 16 }}>
+                {nurseriesError}
+              </div>
+            )}
+            {nurseriesLoading ? (
+              <div className={styles.loading}>Loading nurseries…</div>
+            ) : nurseries.length === 0 ? (
+              <div className={styles.empty}>
+                <div className={styles.emptyIcon}>🌱</div>
+                <div className={styles.emptyTitle}>No nurseries registered yet</div>
+                <div className={styles.emptyText}>Nurseries will appear here when owners sign up at /nursery/signup</div>
+              </div>
+            ) : (
+              nurseries.map(n => (
+                <NurseryAdminCard
+                  key={n.id}
+                  nursery={n}
+                  processing={nurseriesProcessing.has(n.id)}
+                  onVerify={v   => patchNursery(n.id, { is_verified: v })}
+                  onActivate={a => patchNursery(n.id, { is_active: a })}
+                />
+              ))
+            )}
+          </>
+        )}
+
+        {/* ── PLANTS PANEL ── */}
+        {adminView === 'plants' && (
+          <>
+            <div className={styles.sectionHeader}>
+              <span className={styles.sectionNumber}>§ {filter.toUpperCase()}</span>
+              <span className={styles.sectionTitle}>
+                {filter === 'draft' ? 'Pending Review' : filter === 'approved' ? 'Live in Database' : filter === 'rejected' ? 'Rejected' : 'All Species'}
+              </span>
+              <span className={styles.count}>{visiblePlants.length} {visiblePlants.length === 1 ? 'record' : 'records'}</span>
+            </div>
+
+            {loading ? (
+              <div className={styles.loading}>Loading species…</div>
+            ) : visiblePlants.length === 0 ? (
+              <div className={styles.empty}>
+                <div className={styles.emptyIcon}>📋</div>
+                <div className={styles.emptyTitle}>
+                  {filter === 'draft' ? 'Queue is clear' : `No ${filter} species`}
+                </div>
+                <div className={styles.emptyText}>
+                  {filter === 'draft'
+                    ? 'Run the curation script to populate the queue: node scripts/curate.mjs --batch ...'
+                    : 'No records match this filter.'}
+                </div>
+              </div>
+            ) : (
+              visiblePlants.map(plant => (
+                <PlantCard
+                  key={plant.id}
+                  plant={plant}
+                  processing={processing.has(plant.id)}
+                  onApprove={() => updateStatus(plant.id, 'approved')}
+                  onReject={() => updateStatus(plant.id, 'rejected')}
+                  onUndo={() => updateStatus(plant.id, 'draft')}
+                />
+              ))
+            )}
+          </>
+        )}
+
+      </div>
+    </div>
+  )
+}
+
+// ── Nursery Admin Card ─────────────────────────────────────────────────────
+interface NurseryCardProps {
+  nursery: AdminNursery
+  processing: boolean
+  onVerify: (v: boolean) => void
+  onActivate: (a: boolean) => void
+}
+
+function NurseryAdminCard({ nursery, processing, onVerify, onActivate }: NurseryCardProps) {
+  const ownerEmail = nursery.profiles?.email ?? nursery.owner_user_id ?? '—'
+  return (
+    <div className={styles.card} style={{ borderLeft: `4px solid ${nursery.is_verified ? '#1a5d5d' : '#f59e0b'}` }}>
+      <div className={styles.cardHeader}>
+        <div className={styles.nameBlock}>
+          <span className={styles.scientificName}>{nursery.name}</span>
+          <span className={styles.commonNames}>{nursery.county ?? 'County not set'} · {ownerEmail}</span>
+        </div>
+        <div className={styles.badgeRow}>
+          {nursery.is_verified
+            ? <span className={`${styles.badge} ${styles.approved}`}>✓ Verified</span>
+            : <span className={`${styles.badge} ${styles.draft}`}>Pending</span>}
+          {!nursery.is_active && (
+            <span className={`${styles.badge} ${styles.rejected}`}>Deactivated</span>
+          )}
+        </div>
+      </div>
+
+      {nursery.specialties?.length ? (
+        <div className={styles.cardBody} style={{ gridTemplateColumns: '1fr' }}>
+          <div className={styles.fieldGroup} style={{ gridColumn: '1/-1' }}>
+            <span className={styles.fieldLabel}>Specialties</span>
+            <div className={styles.tagList}>
+              {nursery.specialties.map(s => <span key={s} className={styles.tag}>{s}</span>)}
             </div>
           </div>
+        </div>
+      ) : null}
+
+      <div style={{ fontSize: '0.75rem', color: '#6a6a6a', padding: '0 0 10px' }}>
+        Registered {new Date(nursery.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}
+        {' · '}<a href={`/nurseries/${nursery.slug}`} target="_blank" rel="noreferrer" style={{ color: 'var(--color-primary)' }}>View public page ↗</a>
+      </div>
+
+      <div className={styles.cardActions}>
+        {!nursery.is_verified ? (
+          <button
+            className={`${styles.btn} ${styles.btnApprove}`}
+            onClick={() => onVerify(true)}
+            disabled={processing}
+          >
+            {processing ? 'Saving…' : '✓ Verify nursery'}
+          </button>
         ) : (
-          visiblePlants.map(plant => (
-            <PlantCard
-              key={plant.id}
-              plant={plant}
-              processing={processing.has(plant.id)}
-              onApprove={() => updateStatus(plant.id, 'approved')}
-              onReject={() => updateStatus(plant.id, 'rejected')}
-              onUndo={() => updateStatus(plant.id, 'draft')}
-            />
-          ))
+          <button
+            className={`${styles.btn} ${styles.btnUndo}`}
+            onClick={() => onVerify(false)}
+            disabled={processing}
+          >
+            Remove verification
+          </button>
+        )}
+        {nursery.is_active ? (
+          <button
+            className={`${styles.btn} ${styles.btnReject}`}
+            onClick={() => onActivate(false)}
+            disabled={processing}
+          >
+            Deactivate
+          </button>
+        ) : (
+          <button
+            className={`${styles.btn} ${styles.btnApprove}`}
+            onClick={() => onActivate(true)}
+            disabled={processing}
+          >
+            Reactivate
+          </button>
         )}
       </div>
     </div>

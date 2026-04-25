@@ -602,6 +602,47 @@ app.get('/api/recommend', async (req, res) => {
 })
 
 // =============================
+// ADMIN — NURSERY MANAGEMENT
+// All routes below require the caller to be widsonnambaisi@gmail.com
+// =============================
+
+const ADMIN_EMAIL = 'widsonnambaisi@gmail.com'
+
+async function requireAdmin(req, res) {
+  const user = await getAuthUser(req)
+  if (!user || user.email !== ADMIN_EMAIL) {
+    res.status(403).json({ error: 'Admin access only.' })
+    return null
+  }
+  return user
+}
+
+// GET /api/admin/nurseries — all nurseries with owner email
+app.get('/api/admin/nurseries', async (req, res) => {
+  if (!await requireAdmin(req, res)) return
+  const { data, error } = await supabase
+    .from('nurseries')
+    .select('id, name, slug, county, specialties, is_verified, is_active, created_at, owner_user_id, profiles:owner_user_id(email)')
+    .order('created_at', { ascending: false })
+  if (error) return res.status(500).json({ error: error.message })
+  res.json({ nurseries: data ?? [] })
+})
+
+// PATCH /api/admin/nurseries/:id — toggle is_verified and/or is_active
+app.patch('/api/admin/nurseries/:id', async (req, res) => {
+  if (!await requireAdmin(req, res)) return
+  const id = String(req.params.id)
+  const b = req.body || {}
+  const patch = {}
+  if (typeof b.is_verified === 'boolean') patch.is_verified = b.is_verified
+  if (typeof b.is_active  === 'boolean') patch.is_active   = b.is_active
+  if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'no fields to update' })
+  const { data, error } = await supabase.from('nurseries').update(patch).eq('id', id).select('*').single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.json({ nursery: data })
+})
+
+// =============================
 // AI CHAT ENDPOINT
 // POST /api/chat
 // Body: { message: string, history: [{role, content}] }
