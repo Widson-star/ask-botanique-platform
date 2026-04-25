@@ -114,6 +114,7 @@ export default function Landing() {
             <span>Ask Botanique</span>
           </div>
           <div className={styles.navLinks}>
+            <Link to="/explore" className={styles.navLink}>Browse plants</Link>
             {user ? (
               <Link to="/chat" className={styles.navCta}>Open Chat →</Link>
             ) : (
@@ -144,13 +145,17 @@ export default function Landing() {
             {user ? (
               <div className={styles.heroActions}>
                 <Link to="/chat" className={styles.btnPrimary}>Open Chat <ArrowRight size={16} /></Link>
+                <Link to="/explore" className={styles.btnGhost}>Browse plants →</Link>
               </div>
             ) : (
               <div className={styles.heroActions}>
                 <Link to="/signup" className={styles.btnPrimary}>Get started free</Link>
-                <button className={styles.btnGhost} onClick={() => setTourOpen(true)}>See how it works →</button>
+                <Link to="/explore" className={styles.btnGhost}>Browse plants →</Link>
               </div>
             )}
+            <p className={styles.heroHint}>
+              <button className={styles.hintLink} onClick={() => setTourOpen(true)}>See how it works →</button>
+            </p>
             <div className={styles.heroStats}>
               <span>{speciesCount ? `${speciesCount}+ Species` : '600+ Species'}</span>
               <span className={styles.statDot}>·</span>
@@ -273,9 +278,15 @@ export default function Landing() {
             Join landscapers and gardeners using Ask Botanique across East Africa.
           </p>
           {user ? (
-            <Link to="/chat" className={styles.ctaBtn}>Open Chat →</Link>
+            <div className={styles.ctaActions}>
+              <Link to="/chat" className={styles.ctaBtn}>Open Chat →</Link>
+              <Link to="/explore" className={styles.ctaBtnSecondary}>Browse plants →</Link>
+            </div>
           ) : (
-            <Link to="/signup" className={styles.ctaBtn}>Create your free account</Link>
+            <div className={styles.ctaActions}>
+              <Link to="/signup" className={styles.ctaBtn}>Create your free account</Link>
+              <Link to="/explore" className={styles.ctaBtnSecondary}>Browse plants →</Link>
+            </div>
           )}
         </div>
       </section>
