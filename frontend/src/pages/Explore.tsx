@@ -137,6 +137,7 @@ export default function Explore() {
           <span>Ask Botanique</span>
         </Link>
         <div className={styles.navRight}>
+          <Link to="/nurseries" className={styles.loginLink}>Nurseries</Link>
           {user ? (
             <Link to="/chat" className={styles.chatBtn}>Open Chat →</Link>
           ) : (

@@ -209,6 +209,235 @@ app.get('/api/stats', async (req, res) => {
 })
 
 // =============================
+// NURSERIES — marketplace public + authed endpoints
+// =============================
+
+// Per-request Supabase client scoped to the caller's JWT (so RLS auth.uid() works)
+function supabaseAsUser(req) {
+  const auth = req.headers['authorization']
+  if (!auth?.startsWith('Bearer ')) return null
+  const token = auth.slice(7)
+  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+}
+
+function slugify(s) {
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+}
+
+// GET /api/nurseries — public listing (filter by county, specialty, q)
+app.get('/api/nurseries', async (req, res) => {
+  const { q, county, specialty, verified, limit: rawLimit = '24', offset: rawOffset = '0' } = req.query
+  const limit = Math.min(Math.max(parseInt(rawLimit, 10) || 24, 1), 60)
+  const offset = Math.max(parseInt(rawOffset, 10) || 0, 0)
+
+  try {
+    let query = supabase
+      .from('nurseries')
+      .select('id, slug, name, description, county, specialties, delivery_counties, min_order_kes, is_verified, profile_image_url, whatsapp, phone', { count: 'exact' })
+      .eq('is_active', true)
+
+    if (q) {
+      const safe = String(q).replace(/[^a-zA-Z0-9 '\-]/g, '').slice(0, 100)
+      query = query.or(`name.ilike.%${safe}%,description.ilike.%${safe}%,county.ilike.%${safe}%`)
+    }
+    if (county) query = query.eq('county', String(county))
+    if (specialty) query = query.contains('specialties', [String(specialty)])
+    if (verified === 'true') query = query.eq('is_verified', true)
+
+    query = query.order('is_verified', { ascending: false }).order('name', { ascending: true }).range(offset, offset + limit - 1)
+    const { data, error, count } = await query
+    if (error) throw error
+    res.json({ nurseries: data ?? [], total: count ?? 0 })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/nurseries/me — authed: returns the caller's nursery (or null)
+app.get('/api/nurseries/me', async (req, res) => {
+  const userClient = supabaseAsUser(req)
+  if (!userClient) return res.status(401).json({ error: 'Auth required' })
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Auth required' })
+  const { data, error } = await userClient
+    .from('nurseries')
+    .select('*')
+    .eq('owner_user_id', user.id)
+    .maybeSingle()
+  if (error) return res.status(500).json({ error: error.message })
+  res.json({ nursery: data })
+})
+
+// GET /api/nurseries/:slug — public detail + inventory
+app.get('/api/nurseries/:slug', async (req, res) => {
+  const slug = String(req.params.slug || '').slice(0, 80)
+  try {
+    const { data: nursery, error: nErr } = await supabase
+      .from('nurseries')
+      .select('id, slug, name, description, county, address, location_lat, location_lng, specialties, delivery_counties, min_order_kes, is_verified, profile_image_url, phone, whatsapp, email, website, created_at')
+      .eq('slug', slug)
+      .eq('is_active', true)
+      .maybeSingle()
+    if (nErr) throw nErr
+    if (!nursery) return res.status(404).json({ error: 'Nursery not found' })
+
+    const { data: inventory, error: iErr } = await supabase
+      .from('nursery_inventory')
+      .select('id, quantity_available, price_kes, price_unit, container_size, is_available, lead_time_days, seasonal_note, last_updated, plants:plant_id (id, scientific_name, common_names, tags, image_url, thumbnail_url, ecological_zone, origin)')
+      .eq('nursery_id', nursery.id)
+      .eq('is_available', true)
+      .order('last_updated', { ascending: false })
+    if (iErr) throw iErr
+
+    res.json({ nursery, inventory: inventory ?? [] })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/nurseries — authed: create my nursery
+app.post('/api/nurseries', async (req, res) => {
+  const userClient = supabaseAsUser(req)
+  if (!userClient) return res.status(401).json({ error: 'Auth required' })
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Auth required' })
+
+  const b = req.body || {}
+  const name = typeof b.name === 'string' ? b.name.trim().slice(0, 120) : ''
+  if (!name) return res.status(400).json({ error: 'name required' })
+
+  // Generate unique-ish slug
+  let baseSlug = slugify(b.slug || name)
+  if (!baseSlug) baseSlug = `nursery-${user.id.slice(0, 8)}`
+  let slug = baseSlug
+  let n = 1
+  // collision check (small race tolerated; UNIQUE constraint is the real guard)
+  while (true) {
+    const { data: existing } = await supabase.from('nurseries').select('id').eq('slug', slug).maybeSingle()
+    if (!existing) break
+    n += 1
+    slug = `${baseSlug}-${n}`
+    if (n > 50) { slug = `${baseSlug}-${Date.now().toString(36)}`; break }
+  }
+
+  const payload = {
+    owner_user_id: user.id,
+    name,
+    slug,
+    description: typeof b.description === 'string' ? b.description.slice(0, 2000) : null,
+    phone: typeof b.phone === 'string' ? b.phone.slice(0, 40) : null,
+    whatsapp: typeof b.whatsapp === 'string' ? b.whatsapp.slice(0, 40) : null,
+    email: typeof b.email === 'string' ? b.email.slice(0, 200) : null,
+    website: typeof b.website === 'string' ? b.website.slice(0, 300) : null,
+    address: typeof b.address === 'string' ? b.address.slice(0, 300) : null,
+    county: typeof b.county === 'string' ? b.county.slice(0, 60) : null,
+    specialties: Array.isArray(b.specialties) ? b.specialties.slice(0, 20).map(s => String(s).slice(0, 40)) : null,
+    delivery_counties: Array.isArray(b.delivery_counties) ? b.delivery_counties.slice(0, 47).map(s => String(s).slice(0, 60)) : null,
+    min_order_kes: Number.isFinite(Number(b.min_order_kes)) ? parseInt(b.min_order_kes, 10) : null,
+    profile_image_url: typeof b.profile_image_url === 'string' ? b.profile_image_url.slice(0, 500) : null,
+  }
+
+  const { data, error } = await userClient.from('nurseries').insert(payload).select('*').single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.status(201).json({ nursery: data })
+})
+
+// PATCH /api/nurseries/:id — authed owner: update fields
+app.patch('/api/nurseries/:id', async (req, res) => {
+  const userClient = supabaseAsUser(req)
+  if (!userClient) return res.status(401).json({ error: 'Auth required' })
+
+  const id = String(req.params.id)
+  const b = req.body || {}
+  const allow = ['name', 'description', 'phone', 'whatsapp', 'email', 'website', 'address', 'county', 'specialties', 'delivery_counties', 'min_order_kes', 'profile_image_url', 'is_active']
+  const patch = {}
+  for (const k of allow) if (k in b) patch[k] = b[k]
+  if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'no fields to update' })
+
+  const { data, error } = await userClient.from('nurseries').update(patch).eq('id', id).select('*').single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.json({ nursery: data })
+})
+
+// =============================
+// NURSERY INVENTORY
+// =============================
+
+// GET /api/nurseries/:id/inventory — authed owner view (full, incl. unavailable)
+app.get('/api/nurseries/:id/inventory', async (req, res) => {
+  const userClient = supabaseAsUser(req)
+  if (!userClient) return res.status(401).json({ error: 'Auth required' })
+  const id = String(req.params.id)
+  const { data, error } = await userClient
+    .from('nursery_inventory')
+    .select('id, plant_id, quantity_available, price_kes, price_unit, container_size, is_available, lead_time_days, seasonal_note, last_updated, plants:plant_id (id, scientific_name, common_names, image_url, thumbnail_url)')
+    .eq('nursery_id', id)
+    .order('last_updated', { ascending: false })
+  if (error) return res.status(400).json({ error: error.message })
+  res.json({ inventory: data ?? [] })
+})
+
+// POST /api/nurseries/:id/inventory — authed owner: add item
+app.post('/api/nurseries/:id/inventory', async (req, res) => {
+  const userClient = supabaseAsUser(req)
+  if (!userClient) return res.status(401).json({ error: 'Auth required' })
+
+  const nurseryId = String(req.params.id)
+  const b = req.body || {}
+  if (!b.plant_id) return res.status(400).json({ error: 'plant_id required' })
+
+  const payload = {
+    nursery_id: nurseryId,
+    plant_id: String(b.plant_id),
+    quantity_available: Number.isFinite(Number(b.quantity_available)) ? parseInt(b.quantity_available, 10) : 0,
+    price_kes: Number.isFinite(Number(b.price_kes)) ? parseInt(b.price_kes, 10) : null,
+    price_unit: typeof b.price_unit === 'string' ? b.price_unit.slice(0, 30) : 'seedling',
+    container_size: typeof b.container_size === 'string' ? b.container_size.slice(0, 40) : null,
+    lead_time_days: Number.isFinite(Number(b.lead_time_days)) ? parseInt(b.lead_time_days, 10) : null,
+    seasonal_note: typeof b.seasonal_note === 'string' ? b.seasonal_note.slice(0, 200) : null,
+    is_available: b.is_available !== false,
+  }
+
+  const { data, error } = await userClient.from('nursery_inventory').insert(payload).select('*').single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.status(201).json({ item: data })
+})
+
+// PATCH /api/inventory/:itemId — authed owner: update an inventory row
+app.patch('/api/inventory/:itemId', async (req, res) => {
+  const userClient = supabaseAsUser(req)
+  if (!userClient) return res.status(401).json({ error: 'Auth required' })
+  const itemId = String(req.params.itemId)
+  const b = req.body || {}
+  const allow = ['quantity_available', 'price_kes', 'price_unit', 'container_size', 'is_available', 'lead_time_days', 'seasonal_note']
+  const patch = { last_updated: new Date().toISOString() }
+  for (const k of allow) if (k in b) patch[k] = b[k]
+
+  const { data, error } = await userClient.from('nursery_inventory').update(patch).eq('id', itemId).select('*').single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.json({ item: data })
+})
+
+// DELETE /api/inventory/:itemId
+app.delete('/api/inventory/:itemId', async (req, res) => {
+  const userClient = supabaseAsUser(req)
+  if (!userClient) return res.status(401).json({ error: 'Auth required' })
+  const itemId = String(req.params.itemId)
+  const { error } = await userClient.from('nursery_inventory').delete().eq('id', itemId)
+  if (error) return res.status(400).json({ error: error.message })
+  res.json({ ok: true })
+})
+
+// =============================
 // CATEGORY
 // GET /plants/category/:category
 // =============================

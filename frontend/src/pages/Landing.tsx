@@ -115,6 +115,8 @@ export default function Landing() {
           </div>
           <div className={styles.navLinks}>
             <Link to="/explore" className={styles.navLink}>Browse plants</Link>
+            <Link to="/nurseries" className={styles.navLink}>Nurseries</Link>
+            <Link to="/nursery/signup" className={styles.navLink}>List your nursery</Link>
             {user ? (
               <Link to="/chat" className={styles.navLink}>Chat</Link>
             ) : (

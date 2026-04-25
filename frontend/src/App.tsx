@@ -7,6 +7,10 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Chat from './pages/Chat'
 import Explore from './pages/Explore'
+import Nurseries from './pages/Nurseries'
+import NurseryDetail from './pages/NurseryDetail'
+import NurserySignup from './pages/NurserySignup'
+import NurseryDashboard from './pages/NurseryDashboard'
 import Curation from './pages/admin/Curation'
 
 export default function App() {
@@ -23,6 +27,24 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Chat />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/nurseries" element={<Nurseries />} />
+          <Route path="/nurseries/:slug" element={<NurseryDetail />} />
+          <Route
+            path="/nursery/signup"
+            element={
+              <ProtectedRoute>
+                <NurserySignup />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/nursery/dashboard"
+            element={
+              <ProtectedRoute>
+                <NurseryDashboard />
               </ProtectedRoute>
             }
           />
