@@ -116,7 +116,7 @@ export default function Landing() {
           <div className={styles.navLinks}>
             <Link to="/explore" className={styles.navLink}>Browse plants</Link>
             {user ? (
-              <Link to="/chat" className={styles.navCta}>Open Chat →</Link>
+              <Link to="/chat" className={styles.navLink}>Chat</Link>
             ) : (
               <>
                 <Link to="/login" className={styles.navLink}>Sign in</Link>
@@ -278,10 +278,7 @@ export default function Landing() {
             Join landscapers and gardeners using Ask Botanique across East Africa.
           </p>
           {user ? (
-            <div className={styles.ctaActions}>
-              <Link to="/chat" className={styles.ctaBtn}>Open Chat →</Link>
-              <Link to="/explore" className={styles.ctaBtnSecondary}>Browse plants →</Link>
-            </div>
+            <Link to="/explore" className={styles.ctaBtn}>Browse plants →</Link>
           ) : (
             <div className={styles.ctaActions}>
               <Link to="/signup" className={styles.ctaBtn}>Create your free account</Link>
