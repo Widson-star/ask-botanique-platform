@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import styles from './Explore.module.css'
 
@@ -63,10 +63,14 @@ interface ExplorePlant {
 
 export default function Explore() {
   const { user } = useAuth()
-  const [q, setQ] = useState('')
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [zone, setZone] = useState('')
-  const [origin, setOrigin] = useState('')
+  const [searchParams] = useSearchParams()
+  const [q, setQ] = useState(() => searchParams.get('q') ?? '')
+  const [selectedTags, setSelectedTags] = useState<string[]>(() => {
+    const t = searchParams.get('tags')
+    return t ? t.split(',').map(s => s.trim()).filter(Boolean) : []
+  })
+  const [zone, setZone] = useState(() => searchParams.get('ecological_zone') ?? '')
+  const [origin, setOrigin] = useState(() => searchParams.get('origin') ?? '')
   const [plants, setPlants] = useState<ExplorePlant[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)

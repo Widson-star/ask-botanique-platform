@@ -133,7 +133,7 @@ export default function NurserySignup() {
 
       <main className={styles.formWrap}>
         <header className={styles.formHeader}>
-          <span className={styles.eyebrow}>§ Nursery onboarding</span>
+          <span className={styles.eyebrow}>Nursery onboarding</span>
           <h1>List your nursery on Ask Botanique.</h1>
           <p className={styles.lede}>
             Reach landscape architects, designers and homeowners across East Africa.

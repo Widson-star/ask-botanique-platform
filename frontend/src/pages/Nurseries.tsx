@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import styles from './Nursery.module.css'
 
@@ -36,9 +36,10 @@ interface NurseryCard {
 
 export default function Nurseries() {
   const { user } = useAuth()
-  const [q, setQ]               = useState('')
-  const [county, setCounty]     = useState('')
-  const [specialty, setSpec]    = useState('')
+  const [searchParams] = useSearchParams()
+  const [q, setQ]               = useState(() => searchParams.get('q') ?? '')
+  const [county, setCounty]     = useState(() => searchParams.get('county') ?? '')
+  const [specialty, setSpec]    = useState(() => searchParams.get('specialty') ?? '')
   const [items, setItems]       = useState<NurseryCard[]>([])
   const [total, setTotal]       = useState(0)
   const [loading, setLoading]   = useState(false)
@@ -87,7 +88,7 @@ export default function Nurseries() {
       {/* Thumbtack-borrowed hero: giant title + single search bar with county selector */}
       <section className={styles.heroWrap}>
         <div className={styles.heroInner}>
-          <span className={styles.heroEyebrow}>§ Marketplace</span>
+          <span className={styles.heroEyebrow}>Marketplace</span>
           <h1 className={styles.heroTitle}>Find a nursery near you.</h1>
           <p className={styles.heroLede}>
             Verified East African nurseries — search by plant, specialty or county.

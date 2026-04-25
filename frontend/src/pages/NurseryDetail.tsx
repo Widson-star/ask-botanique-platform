@@ -115,7 +115,7 @@ export default function NurseryDetail() {
       <section className={styles.heroWrap} style={{ paddingTop: 48, paddingBottom: 36 }}>
         <div className={styles.heroInner} style={{ textAlign: 'left' }}>
           <span className={styles.heroEyebrow}>
-            {nursery.county ? `§ ${nursery.county}` : '§ Nursery'}
+            {nursery.county ?? 'Nursery'}
           </span>
           <h1 className={styles.heroTitle} style={{ fontSize: '2.25rem' }}>
             {nursery.name}

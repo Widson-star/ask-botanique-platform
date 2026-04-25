@@ -60,12 +60,10 @@ const STEPS = [
       <div className={styles.mockChat}>
         <div className={styles.mockBubbleUser}>Which of these needs the least watering?</div>
         <div className={styles.mockBubbleAI}>
-          <span className={styles.mockAiIcon}>🌿</span>
           <p><strong>Acacia tortilis</strong> is your best pick for low water needs — it thrives on 400–600 mm annually and is deeply drought-adapted to East African savannah conditions.</p>
         </div>
         <div className={styles.mockBubbleUser}>Any concerns for a rooftop setting?</div>
         <div className={styles.mockBubbleAIShort}>
-          <span className={styles.mockAiIcon}>🌿</span>
           <p>Root depth could be an issue — consider <strong>Terminalia mantaly</strong> instead, which has a compact root system suited to contained planting.</p>
         </div>
       </div>

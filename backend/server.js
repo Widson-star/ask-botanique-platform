@@ -865,15 +865,30 @@ app.post('/api/chat', chatRateLimit, async (req, res) => {
       let nameMatches = []
 
       if (intentTag) {
-        // Tag search: pull top plants for this category, ordered by confidence_score
+        // For 'fruit' queries, require BOTH fruit+edible tags to surface true food trees
+        // (Mango, Avocado, Guava) over plants that merely produce edible fruits (Baobab).
+        const tagFilter = intentTag === 'fruit' ? ['fruit', 'edible'] : [intentTag]
+        const queryLimit = intentTag === 'fruit' ? 20 : 12
         const { data } = await supabase
           .from('plants')
           .select('id, scientific_name, common_names, tags, origin, ecological_zone, sunlight, maintenance_level, min_rainfall, max_rainfall, description, image_url, thumbnail_url, functions, confidence_score')
           .eq('review_status', 'approved')
-          .contains('tags', [intentTag])
+          .contains('tags', tagFilter)
           .order('confidence_score', { ascending: false })
-          .limit(8)
+          .limit(queryLimit)
         tagMatches = data ?? []
+
+        // Fallback: if fruit+edible combo returns < 4 results, relax to fruit-only
+        if (intentTag === 'fruit' && tagMatches.length < 4) {
+          const { data: fruitOnly } = await supabase
+            .from('plants')
+            .select('id, scientific_name, common_names, tags, origin, ecological_zone, sunlight, maintenance_level, min_rainfall, max_rainfall, description, image_url, thumbnail_url, functions, confidence_score')
+            .eq('review_status', 'approved')
+            .contains('tags', ['fruit'])
+            .order('confidence_score', { ascending: false })
+            .limit(20)
+          tagMatches = fruitOnly ?? []
+        }
       }
 
       if (tagMatches.length === 0) {

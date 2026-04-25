@@ -172,7 +172,6 @@ export default function Chat() {
         {/* Context banner when arriving from a plant card */}
         {plantParam && messages.length <= 1 && (
           <div className={styles.contextBanner}>
-            <span>🌿</span>
             <span>Asking about <strong>{plantParam}</strong></span>
             <Link to="/explore" className={styles.contextBack}>← Back to explore</Link>
           </div>

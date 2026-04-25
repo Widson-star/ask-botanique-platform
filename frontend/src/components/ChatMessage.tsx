@@ -12,7 +12,7 @@ export default function ChatMessage({ message }: Props) {
   return (
     <div className={`${styles.wrapper} ${isUser ? styles.user : styles.assistant}`}>
       <div className={styles.avatar}>
-        {isUser ? '👤' : '🌿'}
+        {isUser ? '👤' : 'AB'}
       </div>
       <div className={styles.bubble}>
         <div className={styles.text}>

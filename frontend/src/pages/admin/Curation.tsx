@@ -271,7 +271,7 @@ export default function Curation() {
         {adminView === 'nurseries' && (
           <>
             <div className={styles.sectionHeader}>
-              <span className={styles.sectionNumber}>§ NURSERIES</span>
+              <span className={styles.sectionNumber}>NURSERIES</span>
               <span className={styles.sectionTitle}>Nursery Verification</span>
               <span className={styles.count}>{nurseries.length} registered</span>
             </div>
@@ -284,7 +284,7 @@ export default function Curation() {
               <div className={styles.loading}>Loading nurseries…</div>
             ) : nurseries.length === 0 ? (
               <div className={styles.empty}>
-                <div className={styles.emptyIcon}>🌱</div>
+                <div className={styles.emptyIcon}>–</div>
                 <div className={styles.emptyTitle}>No nurseries registered yet</div>
                 <div className={styles.emptyText}>Nurseries will appear here when owners sign up at /nursery/signup</div>
               </div>
@@ -306,7 +306,7 @@ export default function Curation() {
         {adminView === 'plants' && (
           <>
             <div className={styles.sectionHeader}>
-              <span className={styles.sectionNumber}>§ {filter.toUpperCase()}</span>
+              <span className={styles.sectionNumber}>{filter.toUpperCase()}</span>
               <span className={styles.sectionTitle}>
                 {filter === 'draft' ? 'Pending Review' : filter === 'approved' ? 'Live in Database' : filter === 'rejected' ? 'Rejected' : 'All Species'}
               </span>
@@ -317,7 +317,7 @@ export default function Curation() {
               <div className={styles.loading}>Loading species…</div>
             ) : visiblePlants.length === 0 ? (
               <div className={styles.empty}>
-                <div className={styles.emptyIcon}>📋</div>
+                <div className={styles.emptyIcon}>–</div>
                 <div className={styles.emptyTitle}>
                   {filter === 'draft' ? 'Queue is clear' : `No ${filter} species`}
                 </div>
@@ -454,7 +454,7 @@ function PlantCard({ plant, processing, onApprove, onReject, onUndo }: CardProps
             <span className={styles.commonNames}>{plant.common_names.join(' · ')}</span>
           ) : null}
           {plant.swahili_names?.length ? (
-            <span className={styles.swahiliNames}>🌿 {plant.swahili_names.join(' · ')}</span>
+            <span className={styles.swahiliNames}>{plant.swahili_names.join(' · ')}</span>
           ) : null}
         </div>
 
@@ -466,7 +466,7 @@ function PlantCard({ plant, processing, onApprove, onReject, onUndo }: CardProps
           )}
           {plant.confidence_score !== null && (
             <span className={`${styles.badge} ${styles.confidence}`}>
-              ⊕ {confidenceLabel(plant.confidence_score)} confidence
+              {confidenceLabel(plant.confidence_score)} confidence
             </span>
           )}
           <span className={`${styles.badge} ${styles.status} ${styles[plant.review_status as keyof typeof styles] ?? ''}`}>

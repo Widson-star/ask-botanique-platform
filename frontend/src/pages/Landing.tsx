@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { CloudRain, Sun, Layers, MessageCircle, Leaf, BarChart2, ArrowRight } from 'lucide-react'
+import { CloudRain, Sun, Layers, MessageCircle, Leaf, BarChart2, ArrowRight, MapPin } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import TeaserSearch, { TeaserSearchHandle } from '../components/TeaserSearch'
 import TourModal from '../components/TourModal'
@@ -67,6 +67,69 @@ const HERO_IMAGES = [
   'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=500&q=80',
   'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=380&q=80',
   'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=380&q=80',
+]
+
+const CATEGORIES = [
+  { slug: 'indigenous',      label: 'Indigenous Trees' },
+  { slug: 'flowering',       label: 'Flowering' },
+  { slug: 'fruit',           label: 'Fruit & Edibles' },
+  { slug: 'shade',           label: 'Shade Trees' },
+  { slug: 'hedge',           label: 'Hedging' },
+  { slug: 'indoor',          label: 'Indoor Plants' },
+  { slug: 'drought-tolerant',label: 'Drought-tolerant' },
+  { slug: 'medicinal',       label: 'Medicinal' },
+  { slug: 'ornamental',      label: 'Ornamental' },
+  { slug: 'climber',         label: 'Climbers' },
+]
+
+const PHOTO_CARDS = [
+  {
+    tag: 'indigenous',
+    label: 'Indigenous Trees',
+    sub: '158 species',
+    img: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    tag: 'flowering',
+    label: 'Flowering',
+    sub: '117 species',
+    img: 'https://images.unsplash.com/photo-1490750967868-88df5691cc0e?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    tag: 'fruit',
+    label: 'Fruit & Edibles',
+    sub: '112 species',
+    img: 'https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    tag: 'shade',
+    label: 'Shade Trees',
+    sub: '129 species',
+    img: 'https://images.unsplash.com/photo-1476231682828-37e571bc172f?auto=format&fit=crop&w=600&q=80',
+  },
+]
+
+const BENEFITS = [
+  {
+    icon: BarChart2,
+    title: 'Get precise recommendations',
+    desc: 'We score thousands of plants against your exact rainfall, soil, and sunlight. No generic lists — every result is ranked and explained.',
+  },
+  {
+    icon: Leaf,
+    title: 'Botanically verified species',
+    desc: 'Every species is reviewed and sourced from East African field data. Our AI only recommends what\'s in our curated database of 682 species.',
+  },
+  {
+    icon: MapPin,
+    title: 'Find nurseries near you',
+    desc: 'Connect with verified nurseries across Kenya who stock the plants you specify. From Nairobi to Mombasa.',
+  },
+]
+
+const COUNTIES = [
+  'Nairobi', 'Kiambu', 'Nakuru', 'Mombasa', 'Kisumu',
+  'Nanyuki', 'Eldoret', 'Nyeri', 'Machakos', 'Laikipia',
 ]
 
 export default function Landing() {
@@ -190,6 +253,17 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ── TRUST STRIP — Pattern 5 ── */}
+      <div className={styles.trustStrip}>
+        <span>{speciesCount ? `${speciesCount}+` : '682+'} species</span>
+        <span className={styles.trustDot}>·</span>
+        <span>Curated for East Africa</span>
+        <span className={styles.trustDot}>·</span>
+        <span>AI-powered recommendations</span>
+        <span className={styles.trustDot}>·</span>
+        <span>Free to start</span>
+      </div>
+
       {/* ── MARQUEE BAND ── */}
       <div className={styles.marquee} aria-hidden="true">
         <div className={styles.marqueeTrack}>
@@ -207,10 +281,36 @@ export default function Landing() {
         </div>
       </div>
 
+      {/* ── CATEGORY STRIP — Pattern 2 ── */}
+      <section className={styles.catStrip}>
+        <div className={styles.catStripInner}>
+          {CATEGORIES.map(c => (
+            <Link key={c.slug} to={`/explore?tags=${c.slug}`} className={styles.catChip}>
+              {c.label}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* ── 4-UP PHOTO CARDS — Pattern 3 ── */}
+      <section className={styles.photoCards}>
+        <div className={styles.photoCardsInner}>
+          {PHOTO_CARDS.map(card => (
+            <Link key={card.tag} to={`/explore?tags=${card.tag}`} className={styles.photoCard}>
+              <img src={card.img} alt={card.label} loading="lazy" className={styles.photoCardImg} />
+              <div className={styles.photoCardOverlay} />
+              <div className={styles.photoCardLabel}>
+                <p className={styles.photoCardTitle}>{card.label}</p>
+                <p className={styles.photoCardCount}>{card.sub}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* ── TEASER SEARCH ── */}
       <section className={styles.teaserSection} ref={teaserSectionRef} id="try-it-free">
         <div className={styles.teaserSectionInner}>
-          <p className={styles.sectionNum}>§ 01 — Try It Free</p>
           <p className={styles.teaserSectionLabel}>TRY IT FREE</p>
           <h2 className={styles.teaserSectionTitle}>Get your first plant recommendation — right now</h2>
           <p className={styles.teaserSectionSub}>
@@ -220,11 +320,29 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ── BENEFITS — Pattern 4 ── */}
+      <section className={styles.benefitSection}>
+        <div className={styles.benefitInner}>
+          <div className={styles.benefitHeader}>
+            <span className={styles.benefitLabel}>Why professionals choose us</span>
+            <h2 className={styles.benefitTitle}>The fastest way to specify plants<br />for East African sites</h2>
+          </div>
+          <div className={styles.benefitGrid}>
+            {BENEFITS.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className={styles.benefitCard}>
+                <div className={styles.benefitIcon}><Icon size={22} strokeWidth={1.8} /></div>
+                <h3 className={styles.benefitCardTitle}>{title}</h3>
+                <p className={styles.benefitCardDesc}>{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── FEATURES ── */}
       <section className={styles.featuresSection}>
         <div className={styles.sectionInner}>
           <div className={styles.featuresHeader}>
-            <p className={styles.sectionNum}>§ 02 — Intelligence</p>
             <h2 className={styles.sectionTitle}>Everything you need to choose<br />the right plant</h2>
             <p className={styles.sectionSub}>
               Stop guessing. Our multi-factor scoring engine and AI chat put decades of
@@ -256,7 +374,6 @@ export default function Landing() {
       {/* ── SOCIAL PROOF ── */}
       <section className={styles.proofSection}>
         <div className={styles.sectionInner}>
-          <p className={styles.sectionNum}>§ 03 — Trusted By</p>
           <p className={styles.proofLabel}>Trusted by landscapers across East Africa</p>
           <div className={styles.testimonialGrid}>
             {TESTIMONIALS.map(t => (
@@ -268,6 +385,24 @@ export default function Landing() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── COUNTY CHIPS — Pattern 6 ── */}
+      <section className={styles.countiesSection}>
+        <div className={styles.sectionInner}>
+          <div className={styles.countiesHeader}>
+            <h2 className={styles.countiesTitle}>Find nurseries in your county</h2>
+            <p className={styles.countiesSub}>Verified nurseries stocking East African species — ready to deliver.</p>
+          </div>
+          <div className={styles.countyChips}>
+            {COUNTIES.map(c => (
+              <Link key={c} to={`/nurseries?county=${encodeURIComponent(c)}`} className={styles.countyChip}>
+                {c}
+              </Link>
+            ))}
+            <Link to="/nurseries" className={styles.countyChipAll}>Browse all →</Link>
           </div>
         </div>
       </section>

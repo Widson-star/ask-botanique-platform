@@ -200,7 +200,11 @@ const TeaserSearch = forwardRef<TeaserSearchHandle, Props>(({ initialQuery = '' 
                     {r.plant.thumbnail_url ?? r.plant.image_url ? (
                       <img src={r.plant.thumbnail_url ?? r.plant.image_url} alt={r.plant.scientific_name} loading="lazy" />
                     ) : (
-                      <div className={styles.plantPlaceholder}>🌱</div>
+                      <div className={styles.plantPlaceholder}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="28" height="28">
+                          <path d="M12 22V12M12 12C10 9 7 6.5 8 3c1.5 1.5 4 4 4 4s2.5-2.5 4-4c1 3.5-2 6-4 9z" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
                     )}
                   </div>
 
