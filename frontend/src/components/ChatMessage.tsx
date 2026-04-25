@@ -21,7 +21,11 @@ export default function ChatMessage({ message }: Props) {
 
         {message.plants && message.plants.length > 0 && (
           <div className={styles.plants}>
-            <p className={styles.plantsLabel}>Recommended plants:</p>
+            <p className={styles.plantsLabel}>
+              {message.plants[0]?.suitability_score != null
+                ? 'Recommended plants:'
+                : 'Plants from our database:'}
+            </p>
             <div className={styles.plantGrid}>
               {message.plants.map(({ plant, suitability_score, match_reasons, warnings }) => (
                 <div key={plant.id} className={styles.plantCard}>
@@ -36,12 +40,14 @@ export default function ChatMessage({ message }: Props) {
                           <p className={styles.plantCommon}>{plant.common_names[0]}</p>
                         )}
                       </div>
-                      <span
-                        className={styles.score}
-                        style={{ background: scoreColor(suitability_score) }}
-                      >
-                        {suitability_score}
-                      </span>
+                      {suitability_score != null && (
+                        <span
+                          className={styles.score}
+                          style={{ background: scoreColor(suitability_score) }}
+                        >
+                          {suitability_score}
+                        </span>
+                      )}
                     </div>
                     {match_reasons.length > 0 && (
                       <ul className={styles.reasons}>

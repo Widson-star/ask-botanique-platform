@@ -639,6 +639,76 @@ const LOCATION_RAINFALL = {
   marsabit: 400, turkana: 250, lodwar: 200,
 }
 
+// Maps natural-language words → known tag slugs in the plants.tags[] column.
+// Used when a user types a category keyword without site conditions.
+const INTENT_TAG_MAP = {
+  'fruit':          'fruit',
+  'fruits':         'fruit',
+  'fruit tree':     'fruit',
+  'fruit trees':    'fruit',
+  'edible':         'edible',
+  'flowering':      'flowering',
+  'flower':         'flowering',
+  'flowers':        'flowering',
+  'hedge':          'hedge',
+  'hedging':        'hedge',
+  'hedges':         'hedge',
+  'shade':          'shade',
+  'shade tree':     'shade',
+  'shade trees':    'shade',
+  'indigenous':     'indigenous',
+  'native':         'indigenous',
+  'medicinal':      'medicinal',
+  'herb':           'herb-spice',
+  'herbs':          'herb-spice',
+  'groundcover':    'groundcover',
+  'ground cover':   'groundcover',
+  'climber':        'climber',
+  'climbers':       'climber',
+  'indoor':         'indoor',
+  'indoor plant':   'indoor',
+  'indoor plants':  'indoor',
+  'succulent':      'succulent',
+  'succulents':     'succulent',
+  'drought':        'drought-tolerant',
+  'drought tolerant': 'drought-tolerant',
+  'invasive':       'invasive',
+  'timber':         'timber',
+  'avenue':         'avenue',
+  'avenue tree':    'avenue',
+  'windbreak':      'windbreak',
+  'agroforestry':   'agroforestry',
+  'ornamental':     'ornamental',
+  'tree':           'tree',
+  'trees':          'tree',
+  'grass':          'grasses',
+  'grasses':        'grasses',
+  'bamboo':         'bamboo',
+  'palm':           'palms',
+  'palms':          'palms',
+  'aquatic':        'aquatic',
+  'water plant':    'aquatic',
+  'perennial':      'perennial',
+  'bee':            'bee-friendly',
+  'bee friendly':   'bee-friendly',
+  'wildlife':       'wildlife',
+  'erosion':        'erosion-control',
+  'erosion control':'erosion-control',
+  'cut flower':     'cut-flower',
+  'cut flowers':    'cut-flower',
+}
+
+function extractIntentTag(message) {
+  const text = message.toLowerCase().trim()
+  // Try longest match first (prevents "shade" matching inside "partial shade")
+  const sorted = Object.keys(INTENT_TAG_MAP).sort((a, b) => b.length - a.length)
+  for (const phrase of sorted) {
+    const re = new RegExp(`\\b${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}s?\\b`)
+    if (re.test(text)) return INTENT_TAG_MAP[phrase]
+  }
+  return null
+}
+
 function extractConditions(message) {
   const text = message.toLowerCase()
   const conditions = {}
@@ -746,40 +816,69 @@ app.post('/api/chat', chatRateLimit, async (req, res) => {
         plantContext += '\n===== END GROUNDING DATA ====='
       }
     } else {
-      // Name-based search — only attempts if the message looks like a plant name query
+      // No full site conditions — try tag-based intent match first, then name search.
+      const intentTag = extractIntentTag(message)
       const safeQuery = message.replace(/[^a-zA-Z0-9 \-]/g, '').slice(0, 100)
-      const { data: nameMatches } = await supabase
-        .from('plants_searchable')
-        .select('*, plant_categories(name)')
-        .or(`scientific_name.ilike.%${safeQuery}%,common_names_text.ilike.%${safeQuery}%`)
-        .limit(5)
 
-      if (nameMatches && nameMatches.length > 0) {
-        topPlants = nameMatches.map(p => ({
+      let tagMatches = []
+      let nameMatches = []
+
+      if (intentTag) {
+        // Tag search: pull top plants for this category, ordered by confidence_score
+        const { data } = await supabase
+          .from('plants')
+          .select('id, scientific_name, common_names, tags, origin, ecological_zone, sunlight, maintenance_level, min_rainfall, max_rainfall, description, image_url, thumbnail_url, functions, confidence_score')
+          .eq('review_status', 'approved')
+          .contains('tags', [intentTag])
+          .order('confidence_score', { ascending: false })
+          .limit(8)
+        tagMatches = data ?? []
+      }
+
+      if (tagMatches.length === 0) {
+        // Fall back to scientific / common name search
+        const { data } = await supabase
+          .from('plants')
+          .select('id, scientific_name, common_names, tags, origin, ecological_zone, sunlight, maintenance_level, min_rainfall, max_rainfall, description, image_url, thumbnail_url, functions, confidence_score')
+          .eq('review_status', 'approved')
+          .or(`scientific_name.ilike.%${safeQuery}%,search_text.ilike.%${safeQuery}%`)
+          .order('confidence_score', { ascending: false })
+          .limit(6)
+        nameMatches = data ?? []
+      }
+
+      const matches = tagMatches.length > 0 ? tagMatches : nameMatches
+      const searchLabel = intentTag ? `"${intentTag}" category` : `name search for "${safeQuery}"`
+
+      if (matches.length > 0) {
+        topPlants = matches.map(p => ({
           plant: {
             id: p.id,
             scientific_name: p.scientific_name,
             common_names: p.common_names,
-            category: p.plant_categories?.name,
+            category: null,
             description: p.description,
-            water_needs: p.water_needs,
+            max_height_cm: null,
+            water_needs: null,
             sunlight: p.sunlight,
             maintenance_level: p.maintenance_level,
             image_url: p.image_url,
             thumbnail_url: p.thumbnail_url,
+            functions: p.functions,
+            image_credits: null,
           },
-          suitability_score: null,
-          match_reasons: [],
+          suitability_score: null,   // no conditions → no score
+          match_reasons: intentTag ? [`Tagged as ${intentTag}`] : [],
           warnings: [],
         }))
 
-        plantContext = `\n\n===== GROUNDING DATA =====\nName-search results for "${safeQuery}". The ONLY plants you may reference are below.\n`
-        plantContext += nameMatches.map(p =>
-          `• ${p.scientific_name} (${p.common_names?.[0] ?? '—'}) | ${p.plant_categories?.name ?? 'Unknown'} | Sunlight: ${p.sunlight ?? '?'} | Water: ${p.water_needs ?? '?'} | Maintenance: ${p.maintenance_level ?? '?'}\n  Description: ${p.description ?? ''}`
+        plantContext = `\n\n===== GROUNDING DATA =====\nDatabase results for ${searchLabel}. The ONLY plants you may reference are the ones below. Do not name any other species.\nNote: no site conditions were provided — do not invent suitability scores. Present the plants concisely and ask the user for their rainfall, soil, and sunlight so you can give scored recommendations.\n`
+        plantContext += matches.map(p =>
+          `• ${p.scientific_name} (${p.common_names?.[0] ?? '—'}) | Sunlight: ${p.sunlight ?? '?'} | Rainfall: ${p.min_rainfall ?? '?'}–${p.max_rainfall ?? '?'}mm | Maintenance: ${p.maintenance_level ?? '?'} | Origin: ${p.origin ?? '?'}\n  Description: ${(p.description ?? '').slice(0, 200)}`
         ).join('\n')
         plantContext += '\n===== END GROUNDING DATA ====='
       } else {
-        plantContext = `\n\n===== GROUNDING DATA =====\nNO MATCHES. The database returned no plants for this query.\nDo NOT recommend any species from memory. Instead, ask the user for:\n  • rainfall (mm/year) or location (e.g. Karen, Nanyuki, Mombasa)\n  • soil type (clay / loam / sandy)\n  • sunlight (full sun / partial shade / shade)\nOr ask them to name a specific plant they're considering.\n===== END GROUNDING DATA =====`
+        plantContext = `\n\n===== GROUNDING DATA =====\nNO MATCHES. The database returned no plants for this query.\n⛔ Do NOT recommend any species from memory or training data.\nInstead, ask the user for:\n  • rainfall (mm/year) or location (e.g. Karen, Nanyuki, Mombasa)\n  • soil type (clay / loam / sandy)\n  • sunlight (full sun / partial shade / shade)\nOr ask them to name a specific plant they're considering.\n===== END GROUNDING DATA =====`
       }
     }
 
