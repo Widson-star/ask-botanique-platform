@@ -903,7 +903,10 @@ app.post('/api/chat', chatRateLimit, async (req, res) => {
         nameMatches = data ?? []
       }
 
-      const matches = tagMatches.length > 0 ? tagMatches : nameMatches
+      const allMatches = tagMatches.length > 0 ? tagMatches : nameMatches
+      // Cap at 8 so GROUNDING DATA and frontend plant cards stay in sync.
+      // Claude will only mention plants it can see — no "I have 20 options" mismatch.
+      const matches = allMatches.slice(0, 8)
       const searchLabel = intentTag ? `"${intentTag}" category` : `name search for "${safeQuery}"`
 
       if (matches.length > 0) {
@@ -928,7 +931,7 @@ app.post('/api/chat', chatRateLimit, async (req, res) => {
           warnings: [],
         }))
 
-        plantContext = `\n\n===== GROUNDING DATA =====\nDatabase results for ${searchLabel}. The ONLY plants you may reference are the ones below. Do not name any other species.\nNote: no site conditions were provided — do not invent suitability scores. Present the plants concisely and ask the user for their rainfall, soil, and sunlight so you can give scored recommendations.\n`
+        plantContext = `\n\n===== GROUNDING DATA =====\nTop database results for ${searchLabel}. The ONLY plants you may reference are the ones below. Do not name any other species.\nNote: no site conditions were provided — do not invent suitability scores. Briefly introduce each plant and ask the user for their rainfall, soil, and sunlight so you can give ranked recommendations.\n`
         plantContext += matches.map(p =>
           `• ${p.scientific_name} (${p.common_names?.[0] ?? '—'}) | Sunlight: ${p.sunlight ?? '?'} | Rainfall: ${p.min_rainfall ?? '?'}–${p.max_rainfall ?? '?'}mm | Maintenance: ${p.maintenance_level ?? '?'} | Origin: ${p.origin ?? '?'}\n  Description: ${(p.description ?? '').slice(0, 200)}`
         ).join('\n')
@@ -966,7 +969,7 @@ app.post('/api/chat', chatRateLimit, async (req, res) => {
 
     res.json({
       reply,
-      plants: topPlants.length > 0 ? topPlants.slice(0, 5) : undefined,
+      plants: topPlants.length > 0 ? topPlants : undefined,
     })
   } catch (error) {
     console.error('Chat error:', error.message)
