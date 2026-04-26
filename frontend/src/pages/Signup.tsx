@@ -1,3 +1,4 @@
+import { BotaniqueMark } from '../components/BotaniqueMark'
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -50,7 +51,7 @@ export default function Signup() {
       <div className="auth-page">
         <div className="auth-card">
           <div className="auth-logo">
-            <img src="/Ask_Botanique_Logo.png" alt="Ask Botanique" />
+            <BotaniqueMark size={28} variant="light" />
             <h1>Check your email</h1>
             <p>
               We've sent a confirmation link to <strong>{email}</strong>.
@@ -71,7 +72,7 @@ export default function Signup() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-logo">
-          <img src="/Ask_Botanique_Logo.png" alt="Ask Botanique" />
+          <BotaniqueMark size={28} variant="light" />
           <h1>Create your account</h1>
           <p>Free forever · No credit card required</p>
         </div>

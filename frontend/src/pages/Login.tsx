@@ -1,3 +1,4 @@
+import { BotaniqueMark } from '../components/BotaniqueMark'
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -39,7 +40,7 @@ export default function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-logo">
-          <img src="/Ask_Botanique_Logo.png" alt="Ask Botanique" />
+          <BotaniqueMark size={28} variant="light" />
           <h1>Welcome back</h1>
           <p>Sign in to your Ask Botanique account</p>
         </div>

@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import styles from './Professionals.module.css'
 import { PRO_TYPES } from './Professionals'
+import { BotaniqueMark } from '../components/BotaniqueMark'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
 
@@ -384,7 +385,7 @@ function Nav() {
   return (
     <nav className={styles.nav}>
       <Link to="/" className={styles.brand}>
-        <img src="/Ask_Botanique_Logo.png" alt="Ask Botanique" />
+        <BotaniqueMark size={28} variant="light" />
         <span>Ask Botanique</span>
       </Link>
       <div className={styles.navRight}>

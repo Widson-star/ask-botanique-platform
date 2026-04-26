@@ -1,3 +1,4 @@
+import { BotaniqueMark } from '../components/BotaniqueMark'
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -122,7 +123,7 @@ export default function NurserySignup() {
     <div className={styles.page}>
       <nav className={styles.nav}>
         <Link to="/" className={styles.brand}>
-          <img src="/Ask_Botanique_Logo.png" alt="Ask Botanique" />
+          <BotaniqueMark size={28} variant="light" />
           <span>Ask Botanique</span>
         </Link>
         <div className={styles.navRight}>

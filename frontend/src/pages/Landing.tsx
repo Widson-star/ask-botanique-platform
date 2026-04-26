@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { CloudRain, Sun, Layers, MessageCircle, Leaf, BarChart2, ArrowRight, MapPin } from 'lucide-react'
+import { CloudRain, Sun, Layers, MessageCircle, Leaf, BarChart2, ArrowRight, MapPin, Menu, X } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import TeaserSearch, { TeaserSearchHandle } from '../components/TeaserSearch'
 import TourModal from '../components/TourModal'
+import { BotaniqueMark } from '../components/BotaniqueMark'
 import styles from './Landing.module.css'
 
 const FEATURES = [
@@ -93,7 +94,7 @@ const PHOTO_CARDS = [
     tag: 'flowering',
     label: 'Flowering',
     sub: '117 species',
-    img: 'https://images.unsplash.com/photo-1490750967868-88df5691cc0e?auto=format&fit=crop&w=600&q=80',
+    img: 'https://images.unsplash.com/photo-1444930694458-01babf71870c?auto=format&fit=crop&w=600&q=80',
   },
   {
     tag: 'fruit',
@@ -135,6 +136,7 @@ const COUNTIES = [
 export default function Landing() {
   const { user } = useAuth()
   const [tourOpen, setTourOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const [speciesCount, setSpeciesCount] = useState<number | null>(null)
   const teaserRef = useRef<TeaserSearchHandle>(null)
   const teaserSectionRef = useRef<HTMLElement>(null)
@@ -172,10 +174,12 @@ export default function Landing() {
       {/* ── NAV ── */}
       <nav className={styles.nav}>
         <div className={styles.navInner}>
-          <div className={styles.navBrand}>
-            <img src="/Ask_Botanique_Logo.png" alt="Ask Botanique" />
+          <Link to="/" className={styles.navBrand}>
+            <BotaniqueMark size={34} variant="paper" />
             <span>Ask Botanique</span>
-          </div>
+          </Link>
+
+          {/* Desktop links */}
           <div className={styles.navLinks}>
             <Link to="/explore" className={styles.navLink}>Browse plants</Link>
             <Link to="/nurseries" className={styles.navLink}>Nurseries</Link>
@@ -191,7 +195,36 @@ export default function Landing() {
               </>
             )}
           </div>
+
+          {/* Mobile hamburger */}
+          <button
+            className={styles.hamburger}
+            onClick={() => setMenuOpen(o => !o)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          >
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
+
+        {/* Mobile dropdown */}
+        {menuOpen && (
+          <div className={styles.mobileMenu} onClick={() => setMenuOpen(false)}>
+            <Link to="/explore" className={styles.mobileLink}>Browse plants</Link>
+            <Link to="/nurseries" className={styles.mobileLink}>Nurseries</Link>
+            <Link to="/professionals" className={styles.mobileLink}>Professionals</Link>
+            <Link to="/supplies" className={styles.mobileLink}>Supplies</Link>
+            <Link to="/nursery/signup" className={styles.mobileLink}>List your nursery</Link>
+            <div className={styles.mobileDivider} />
+            {user ? (
+              <Link to="/chat" className={styles.mobileLink}>Chat</Link>
+            ) : (
+              <>
+                <Link to="/login" className={styles.mobileLink}>Sign in</Link>
+                <Link to="/signup" className={styles.mobileLinkCta}>Get started free →</Link>
+              </>
+            )}
+          </div>
+        )}
       </nav>
 
       {/* ── HERO — split layout ── */}
@@ -431,7 +464,7 @@ export default function Landing() {
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <div className={styles.footerBrand}>
-            <img src="/Ask_Botanique_Logo.png" alt="Ask Botanique" />
+            <BotaniqueMark size={30} variant="light" />
             <div>
               <span className={styles.footerBrandName}>Ask Botanique</span>
               <span className={styles.footerTagline}>Built for East African landscaping</span>

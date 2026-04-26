@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import styles from './Professionals.module.css'
 import { PRO_TYPE_LABELS, ProTypeIcon } from './Professionals'
+import { BotaniqueMark } from '../components/BotaniqueMark'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
 
@@ -153,7 +154,7 @@ export default function ProfessionalDashboard() {
     <div className={styles.page}>
       <nav className={styles.nav}>
         <Link to="/" className={styles.brand}>
-          <img src="/Ask_Botanique_Logo.png" alt="Ask Botanique" />
+          <BotaniqueMark size={28} variant="light" />
           <span>Ask Botanique</span>
         </Link>
         <div className={styles.navRight}>

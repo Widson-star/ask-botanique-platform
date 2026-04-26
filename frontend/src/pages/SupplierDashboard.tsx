@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { Package, Trash2, Plus, X } from 'lucide-react'
+import { BotaniqueMark } from '../components/BotaniqueMark'
 import styles from './Supplies.module.css'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
@@ -366,7 +367,7 @@ function Nav({ supplierSlug }: { supplierSlug: string }) {
   return (
     <nav className={styles.nav}>
       <Link to="/" className={styles.brand}>
-        <img src="/Ask_Botanique_Logo.png" alt="Ask Botanique" />
+        <BotaniqueMark size={28} variant="light" />
         <span>Ask Botanique</span>
       </Link>
       <div className={styles.navRight}>

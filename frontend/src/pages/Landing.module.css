@@ -42,12 +42,7 @@
   color: #1a5d5d;
   font-size: 1.15rem;
   font-weight: 700;
-}
-
-.navBrand img {
-  width: 34px;
-  height: 34px;
-  object-fit: contain;
+  text-decoration: none;
 }
 
 .navLinks {
@@ -1006,6 +1001,66 @@
   transform: translateY(-1px);
 }
 
+/* ── HAMBURGER ── */
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  padding: 6px;
+  color: #1a5d5d;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s;
+  line-height: 0;
+}
+.hamburger:hover { background: rgba(26,93,93,0.08); }
+
+/* ── MOBILE DROPDOWN MENU ── */
+.mobileMenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: rgba(245,241,232,0.98);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(26,93,93,0.12);
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+}
+
+.mobileLink {
+  padding: 13px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a5d5d;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+.mobileLink:hover { background: rgba(26,93,93,0.06); }
+
+.mobileDivider {
+  height: 1px;
+  background: rgba(26,93,93,0.1);
+  margin: 8px 24px;
+}
+
+.mobileLinkCta {
+  margin: 6px 20px 0;
+  padding: 12px 20px;
+  background: #3E9B9B;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 999px;
+  text-align: center;
+  transition: background 0.15s;
+}
+.mobileLinkCta:hover { background: #2E8080; }
+
 /* ── RESPONSIVE ── */
 @media (max-width: 960px) {
   .heroInner {
@@ -1034,6 +1089,20 @@
   }
 }
 
+@media (max-width: 768px) {
+  /* Show hamburger, hide desktop links */
+  .hamburger { display: flex; }
+  .navLinks  { display: none; }
+
+  .navInner {
+    padding: 12px 20px;
+  }
+
+  .navBrand {
+    font-size: 1rem;
+  }
+}
+
 @media (max-width: 640px) {
   .hero,
   .teaserSection,
@@ -1042,25 +1111,66 @@
   .benefitSection,
   .countiesSection,
   .cta {
-    padding: 56px 20px;
+    padding: 48px 20px;
+  }
+
+  .hero {
+    padding-top: 56px;
   }
 
   .photoCards {
-    padding: 32px 20px;
+    padding: 24px 16px;
+  }
+
+  /* Stack photo cards to 1-col on phones */
+  .photoCardsInner {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
 
   .photoCard {
-    height: 200px;
+    height: 180px;
+  }
+
+  .heroHeading {
+    font-size: clamp(2rem, 8vw, 2.6rem);
   }
 
   .heroActions {
     flex-direction: column;
     align-items: flex-start;
+    gap: 14px;
+  }
+
+  .btnPrimary {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 24px;
   }
 
   .trustStrip {
-    gap: 10px;
-    font-size: 0.8rem;
+    gap: 8px;
+    font-size: 0.78rem;
+    padding: 12px 16px;
+  }
+
+  .catStrip {
+    padding: 18px 16px;
+  }
+
+  .footerInner {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 400px) {
+  .photoCardsInner {
+    grid-template-columns: 1fr;
+  }
+  .photoCard {
+    height: 200px;
   }
 }
 
