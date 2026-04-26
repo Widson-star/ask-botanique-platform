@@ -1551,6 +1551,405 @@ app.get('/api/professionals/:slug', async (req, res) => {
 })
 
 // =============================
+// GARDEN SUPPLIES MARKETPLACE
+// =============================
+
+const SUPPLY_CATEGORIES = ['pots','irrigation','pesticides','fertilizer','tools','structures']
+
+// GET /api/supplies — public supplier listing
+// ?q=&category=pots&county=Nairobi&limit=24&offset=0
+app.get('/api/supplies', async (req, res) => {
+  const { q, category, county, limit: rawLimit = '24', offset: rawOffset = '0' } = req.query
+  const limit  = Math.min(Math.max(parseInt(rawLimit,  10) || 24, 1), 60)
+  const offset = Math.max(parseInt(rawOffset, 10) || 0, 0)
+
+  try {
+    let query = supabase
+      .from('suppliers')
+      .select(
+        'id, name, slug, description, county, categories, phone, whatsapp, is_verified',
+        { count: 'exact' }
+      )
+      .eq('is_active', true)
+
+    if (q) {
+      const safe = String(q).replace(/[^a-zA-Z0-9 '\-]/g, '').slice(0, 100)
+      query = query.or(`name.ilike.%${safe}%,description.ilike.%${safe}%`)
+    }
+
+    if (category && SUPPLY_CATEGORIES.includes(String(category))) {
+      query = query.contains('categories', [String(category)])
+    }
+
+    if (county) {
+      query = query.eq('county', String(county).trim())
+    }
+
+    query = query
+      .order('is_verified', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    const { data, error, count } = await query
+    if (error) throw error
+
+    res.json({ suppliers: data ?? [], total: count ?? 0 })
+  } catch (err) {
+    console.error('Supplies list error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// GET /api/supplies/products — search products across all suppliers
+// ?q=&category=pots&material=concrete&in_stock=true&limit=48&offset=0
+app.get('/api/supplies/products', async (req, res) => {
+  const { q, category, material, in_stock, limit: rawLimit = '48', offset: rawOffset = '0' } = req.query
+  const limit  = Math.min(Math.max(parseInt(rawLimit,  10) || 48, 1), 100)
+  const offset = Math.max(parseInt(rawOffset, 10) || 0, 0)
+
+  try {
+    let query = supabase
+      .from('products')
+      .select(
+        'id, supplier_id, name, category, subcategory, description, price_kes, price_unit, material, size_options, image_urls, in_stock, suppliers:supplier_id(id, name, slug, county, whatsapp, phone, is_verified)',
+        { count: 'exact' }
+      )
+
+    if (q) {
+      const safe = String(q).replace(/[^a-zA-Z0-9 '\-]/g, '').slice(0, 100)
+      query = query.or(`name.ilike.%${safe}%,description.ilike.%${safe}%,subcategory.ilike.%${safe}%`)
+    }
+
+    if (category && SUPPLY_CATEGORIES.includes(String(category))) {
+      query = query.eq('category', String(category))
+    }
+
+    if (material) {
+      query = query.eq('material', String(material).trim())
+    }
+
+    if (in_stock === 'true') {
+      query = query.eq('in_stock', true)
+    }
+
+    query = query
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    const { data, error, count } = await query
+    if (error) throw error
+
+    res.json({ products: data ?? [], total: count ?? 0 })
+  } catch (err) {
+    console.error('Products search error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// GET /api/suppliers/me — own supplier profile (auth required)
+app.get('/api/suppliers/me', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  try {
+    const { data, error } = await supabase
+      .from('suppliers')
+      .select('*')
+      .eq('owner_user_id', user.id)
+      .single()
+
+    if (error?.code === 'PGRST116') return res.json({ supplier: null })
+    if (error) throw error
+
+    res.json({ supplier: data })
+  } catch (err) {
+    console.error('Supplier me error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// POST /api/suppliers — create supplier account (auth required)
+app.post('/api/suppliers', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  const { data: existing } = await supabase
+    .from('suppliers')
+    .select('id')
+    .eq('owner_user_id', user.id)
+    .maybeSingle()
+  if (existing) return res.status(409).json({ error: 'You already have a supplier account.' })
+
+  const b = req.body ?? {}
+  const { name, description, county, categories, phone, whatsapp, email, website } = b
+
+  if (!name?.trim()) return res.status(400).json({ error: 'name is required.' })
+  if (!Array.isArray(categories) || categories.length === 0) {
+    return res.status(400).json({ error: 'At least one category is required.' })
+  }
+  const cleanCats = categories.filter(c => SUPPLY_CATEGORIES.includes(String(c)))
+  if (cleanCats.length === 0) {
+    return res.status(400).json({ error: `categories must include at least one of: ${SUPPLY_CATEGORIES.join(', ')}` })
+  }
+
+  // Generate unique slug
+  let baseSlug = slugify(name.trim())
+  let slug = baseSlug
+  for (let n = 1; n <= 50; n++) {
+    const { data: ex } = await supabase.from('suppliers').select('id').eq('slug', slug).maybeSingle()
+    if (!ex) break
+    slug = `${baseSlug}-${n}`
+    if (n === 50) { slug = `${baseSlug}-${Date.now().toString(36)}`; break }
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('suppliers')
+      .insert({
+        owner_user_id: user.id,
+        name:          String(name).trim().slice(0, 200),
+        slug,
+        description:   description ? String(description).slice(0, 2000) : null,
+        county:        county ? String(county).trim().slice(0, 100) : null,
+        categories:    cleanCats,
+        phone:         phone   ? String(phone).slice(0, 30)   : null,
+        whatsapp:      whatsapp ? String(whatsapp).slice(0, 30) : null,
+        email:         email   ? String(email).slice(0, 200)  : null,
+        website:       website ? String(website).slice(0, 300) : null,
+        is_verified: false,
+        is_active: true,
+      })
+      .select('*')
+      .single()
+
+    if (error) throw error
+    res.status(201).json({ supplier: data })
+  } catch (err) {
+    console.error('Supplier create error:', err)
+    res.status(500).json({ error: err.message ?? 'Internal server error' })
+  }
+})
+
+// PATCH /api/suppliers/me — update own supplier account
+app.patch('/api/suppliers/me', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  const b = req.body ?? {}
+  const patch = {}
+
+  if (b.description !== undefined) patch.description = b.description ? String(b.description).slice(0, 2000) : null
+  if (b.county      !== undefined) patch.county      = b.county      ? String(b.county).trim().slice(0, 100) : null
+  if (b.phone       !== undefined) patch.phone       = b.phone       ? String(b.phone).slice(0, 30)   : null
+  if (b.whatsapp    !== undefined) patch.whatsapp    = b.whatsapp    ? String(b.whatsapp).slice(0, 30) : null
+  if (b.email       !== undefined) patch.email       = b.email       ? String(b.email).slice(0, 200)  : null
+  if (b.website     !== undefined) patch.website     = b.website     ? String(b.website).slice(0, 300) : null
+  if (Array.isArray(b.categories)) patch.categories  = b.categories.filter(c => SUPPLY_CATEGORIES.includes(String(c)))
+  if (typeof b.is_active === 'boolean') patch.is_active = b.is_active
+
+  if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'No updatable fields provided.' })
+
+  try {
+    const { data, error } = await supabase
+      .from('suppliers')
+      .update(patch)
+      .eq('owner_user_id', user.id)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    res.json({ supplier: data })
+  } catch (err) {
+    console.error('Supplier update error:', err)
+    res.status(500).json({ error: err.message ?? 'Internal server error' })
+  }
+})
+
+// GET /api/supplies/:slug — public supplier profile + product catalogue
+app.get('/api/supplies/:slug', async (req, res) => {
+  const slug = String(req.params.slug || '').slice(0, 80)
+  if (!slug) return res.status(400).json({ error: 'slug required' })
+
+  try {
+    const { data: supplier, error } = await supabase
+      .from('suppliers')
+      .select('id, name, slug, description, county, categories, phone, whatsapp, email, website, is_verified, created_at')
+      .eq('slug', slug)
+      .eq('is_active', true)
+      .single()
+
+    if (error || !supplier) return res.status(404).json({ error: 'Supplier not found.' })
+
+    const { data: products, error: prodErr } = await supabase
+      .from('products')
+      .select('id, name, category, subcategory, description, price_kes, price_unit, material, size_options, image_urls, in_stock, sort_order')
+      .eq('supplier_id', supplier.id)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+
+    if (prodErr) throw prodErr
+
+    res.json({ supplier, products: products ?? [] })
+  } catch (err) {
+    console.error('Supplier detail error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// GET /api/suppliers/me/products — list own products (auth required)
+app.get('/api/suppliers/me/products', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  try {
+    const { data: supplier } = await supabase
+      .from('suppliers')
+      .select('id')
+      .eq('owner_user_id', user.id)
+      .single()
+
+    if (!supplier) return res.status(404).json({ error: 'No supplier account found.' })
+
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('supplier_id', supplier.id)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    res.json({ products: data ?? [] })
+  } catch (err) {
+    console.error('Products list error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// POST /api/suppliers/me/products — add a product (auth required)
+app.post('/api/suppliers/me/products', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  const { data: supplier } = await supabase
+    .from('suppliers')
+    .select('id')
+    .eq('owner_user_id', user.id)
+    .single()
+
+  if (!supplier) return res.status(404).json({ error: 'No supplier account found.' })
+
+  const b = req.body ?? {}
+  const { name, category, subcategory, description, price_kes, price_unit, material, size_options, in_stock } = b
+
+  if (!name?.trim()) return res.status(400).json({ error: 'name is required.' })
+  if (!category || !SUPPLY_CATEGORIES.includes(String(category))) {
+    return res.status(400).json({ error: `category must be one of: ${SUPPLY_CATEGORIES.join(', ')}` })
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .insert({
+        supplier_id:  supplier.id,
+        name:         String(name).trim().slice(0, 200),
+        category:     String(category),
+        subcategory:  subcategory  ? String(subcategory).trim().slice(0, 100) : null,
+        description:  description  ? String(description).slice(0, 2000) : null,
+        price_kes:    price_kes    ? Math.max(0, Number(price_kes)) : null,
+        price_unit:   price_unit   ? String(price_unit).slice(0, 50) : 'each',
+        material:     material     ? String(material).trim().slice(0, 100) : null,
+        size_options: Array.isArray(size_options)
+          ? size_options.map(s => String(s).trim()).filter(Boolean).slice(0, 20)
+          : [],
+        in_stock: typeof in_stock === 'boolean' ? in_stock : true,
+      })
+      .select('*')
+      .single()
+
+    if (error) throw error
+    res.status(201).json({ product: data })
+  } catch (err) {
+    console.error('Product create error:', err)
+    res.status(500).json({ error: err.message ?? 'Internal server error' })
+  }
+})
+
+// PATCH /api/products/:id — update a product (auth required, owner-only)
+app.patch('/api/products/:id', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  const productId = String(req.params.id)
+  const b = req.body ?? {}
+  const patch = {}
+
+  if (b.name        !== undefined) patch.name        = String(b.name).trim().slice(0, 200)
+  if (b.subcategory !== undefined) patch.subcategory  = b.subcategory ? String(b.subcategory).trim().slice(0, 100) : null
+  if (b.description !== undefined) patch.description  = b.description ? String(b.description).slice(0, 2000) : null
+  if (b.price_kes   !== undefined) patch.price_kes    = b.price_kes   ? Math.max(0, Number(b.price_kes)) : null
+  if (b.price_unit  !== undefined) patch.price_unit   = String(b.price_unit).slice(0, 50)
+  if (b.material    !== undefined) patch.material     = b.material    ? String(b.material).trim().slice(0, 100) : null
+  if (Array.isArray(b.size_options)) patch.size_options = b.size_options.map(s => String(s).trim()).filter(Boolean).slice(0, 20)
+  if (typeof b.in_stock   === 'boolean') patch.in_stock   = b.in_stock
+  if (typeof b.sort_order === 'number')  patch.sort_order = Math.floor(b.sort_order)
+
+  if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'No updatable fields.' })
+
+  try {
+    // Verify ownership via join
+    const { data: product, error: fetchErr } = await supabase
+      .from('products')
+      .select('id, suppliers:supplier_id(owner_user_id)')
+      .eq('id', productId)
+      .single()
+
+    if (fetchErr || !product) return res.status(404).json({ error: 'Product not found.' })
+    if (product.suppliers?.owner_user_id !== user.id) return res.status(403).json({ error: 'Access denied.' })
+
+    const { data, error } = await supabase
+      .from('products')
+      .update(patch)
+      .eq('id', productId)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    res.json({ product: data })
+  } catch (err) {
+    console.error('Product update error:', err)
+    res.status(500).json({ error: err.message ?? 'Internal server error' })
+  }
+})
+
+// DELETE /api/products/:id — delete a product (auth required, owner-only)
+app.delete('/api/products/:id', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  const productId = String(req.params.id)
+
+  try {
+    const { data: product, error: fetchErr } = await supabase
+      .from('products')
+      .select('id, suppliers:supplier_id(owner_user_id)')
+      .eq('id', productId)
+      .single()
+
+    if (fetchErr || !product) return res.status(404).json({ error: 'Product not found.' })
+    if (product.suppliers?.owner_user_id !== user.id) return res.status(403).json({ error: 'Access denied.' })
+
+    const { error } = await supabase.from('products').delete().eq('id', productId)
+    if (error) throw error
+
+    res.json({ ok: true })
+  } catch (err) {
+    console.error('Product delete error:', err)
+    res.status(500).json({ error: err.message ?? 'Internal server error' })
+  }
+})
+
+// =============================
 // START SERVER
 // =============================
 app.listen(PORT, () => {

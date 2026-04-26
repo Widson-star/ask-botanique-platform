@@ -180,6 +180,7 @@ export default function Landing() {
             <Link to="/explore" className={styles.navLink}>Browse plants</Link>
             <Link to="/nurseries" className={styles.navLink}>Nurseries</Link>
             <Link to="/professionals" className={styles.navLink}>Professionals</Link>
+            <Link to="/supplies" className={styles.navLink}>Supplies</Link>
             <Link to="/nursery/signup" className={styles.navLink}>List your nursery</Link>
             {user ? (
               <Link to="/chat" className={styles.navLink}>Chat</Link>
