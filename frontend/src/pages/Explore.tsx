@@ -3,6 +3,26 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import styles from './Explore.module.css'
 
+// ── Shortlist helpers ──
+interface ShortlistItem {
+  plant_id: string
+  scientific_name: string
+  common_names: string[] | null
+  quantity: number
+  price_unit: string
+}
+
+function readShortlist(): ShortlistItem[] {
+  try {
+    const raw = localStorage.getItem('rfq_shortlist')
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function writeShortlist(items: ShortlistItem[]) {
+  localStorage.setItem('rfq_shortlist', JSON.stringify(items))
+}
+
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
 const LIMIT = 48
 
@@ -64,6 +84,7 @@ interface ExplorePlant {
 export default function Explore() {
   const { user } = useAuth()
   const [searchParams] = useSearchParams()
+  const [shortlistCount, setShortlistCount] = useState(() => readShortlist().length)
   const [q, setQ] = useState(() => searchParams.get('q') ?? '')
   const [selectedTags, setSelectedTags] = useState<string[]>(() => {
     const t = searchParams.get('tags')
@@ -142,6 +163,23 @@ export default function Explore() {
         </Link>
         <div className={styles.navRight}>
           <Link to="/nurseries" className={styles.loginLink}>Nurseries</Link>
+          {shortlistCount > 0 && (
+            <Link to="/rfq/new" className={styles.loginLink} style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              Quote list
+              <span style={{
+                background: 'var(--color-accent)',
+                color: '#fff',
+                borderRadius: '50%',
+                width: 18,
+                height: 18,
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>{shortlistCount}</span>
+            </Link>
+          )}
           {user ? (
             <Link to="/chat" className={styles.chatBtn}>Open Chat →</Link>
           ) : (
@@ -241,7 +279,12 @@ export default function Explore() {
                 <div key={i} className={styles.skeleton} />
               ))
             : plants.map(p => (
-                <PlantCard key={p.id} plant={p} showChatLink={!!user} />
+                <PlantCard
+                  key={p.id}
+                  plant={p}
+                  showChatLink={!!user}
+                  onShortlistChange={count => setShortlistCount(count)}
+                />
               ))
           }
         </div>
@@ -280,7 +323,15 @@ export default function Explore() {
   )
 }
 
-function PlantCard({ plant, showChatLink }: { plant: ExplorePlant; showChatLink: boolean }) {
+function PlantCard({
+  plant,
+  showChatLink,
+  onShortlistChange,
+}: {
+  plant: ExplorePlant
+  showChatLink: boolean
+  onShortlistChange?: (count: number) => void
+}) {
   const primaryName = plant.common_names?.[0] ?? plant.scientific_name
   const displayTags = (plant.tags ?? []).slice(0, 3)
   const rainfall =
@@ -289,6 +340,29 @@ function PlantCard({ plant, showChatLink }: { plant: ExplorePlant; showChatLink:
       : plant.min_rainfall
       ? `${plant.min_rainfall}+ mm`
       : null
+
+  const [inShortlist, setInShortlist] = useState(() =>
+    readShortlist().some(it => it.plant_id === plant.id)
+  )
+
+  function toggleShortlist() {
+    const current = readShortlist()
+    let next: ShortlistItem[]
+    if (inShortlist) {
+      next = current.filter(it => it.plant_id !== plant.id)
+    } else {
+      next = [...current, {
+        plant_id: plant.id,
+        scientific_name: plant.scientific_name,
+        common_names: plant.common_names,
+        quantity: 1,
+        price_unit: 'seedling',
+      }]
+    }
+    writeShortlist(next)
+    setInShortlist(!inShortlist)
+    onShortlistChange?.(next.length)
+  }
 
   return (
     <article className={styles.card}>
@@ -333,14 +407,23 @@ function PlantCard({ plant, showChatLink }: { plant: ExplorePlant; showChatLink:
           {rainfall && <span className={styles.metaRain}>☁ {rainfall}</span>}
         </div>
 
-        {showChatLink && (
-          <Link
-            to={`/chat?plant=${encodeURIComponent(plant.scientific_name)}`}
-            className={styles.cardChatLink}
+        <div className={styles.cardActions}>
+          {showChatLink && (
+            <Link
+              to={`/chat?plant=${encodeURIComponent(plant.scientific_name)}`}
+              className={styles.cardChatLink}
+            >
+              Ask about this →
+            </Link>
+          )}
+          <button
+            className={`${styles.cardQuoteBtn} ${inShortlist ? styles.cardQuoteBtnActive : ''}`}
+            onClick={toggleShortlist}
+            title={inShortlist ? 'Remove from quote list' : 'Add to quote list'}
           >
-            Ask about this →
-          </Link>
-        )}
+            {inShortlist ? '✓ In quote list' : '+ Add to quote'}
+          </button>
+        </div>
       </div>
     </article>
   )

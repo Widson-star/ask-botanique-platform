@@ -217,7 +217,7 @@ export default function NurseryDashboard() {
         </Link>
         <div className={styles.navRight}>
           <Link to="/explore" className={styles.navLink}>Browse plants</Link>
-          <Link to="/nurseries" className={styles.navLink}>Nurseries</Link>
+          <Link to="/nursery/rfq" className={styles.navLink}>Incoming RFQs</Link>
           {nursery && (
             <Link to={`/nurseries/${nursery.slug}`} className={styles.navBtn}>View public page →</Link>
           )}

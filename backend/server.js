@@ -978,6 +978,367 @@ app.post('/api/chat', chatRateLimit, async (req, res) => {
 })
 
 // =============================
+// RFQ — REQUEST FOR QUOTE
+// All routes require authentication (Bearer JWT)
+// =============================
+
+// Helper: get nursery owned by auth user, or null
+async function getNurseryForUser(userId) {
+  const { data } = await supabase
+    .from('nurseries')
+    .select('id, name, slug')
+    .eq('owner_user_id', userId)
+    .eq('is_active', true)
+    .single()
+  return data ?? null
+}
+
+// POST /api/rfq — create a new RFQ with line items
+app.post('/api/rfq', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  const b = req.body ?? {}
+  const { project_name, delivery_county, delivery_date, total_budget_kes, notes, items } = b
+
+  if (!project_name || typeof project_name !== 'string' || !project_name.trim()) {
+    return res.status(400).json({ error: 'project_name is required.' })
+  }
+  if (!delivery_county || typeof delivery_county !== 'string') {
+    return res.status(400).json({ error: 'delivery_county is required.' })
+  }
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'items array is required and must not be empty.' })
+  }
+
+  // Validate items
+  const cleanItems = items
+    .filter(it => it?.plant_id && Number.isInteger(Number(it.quantity)) && Number(it.quantity) > 0)
+    .map(it => ({
+      plant_id: String(it.plant_id),
+      quantity: Math.min(Math.max(Math.floor(Number(it.quantity)), 1), 100000),
+      price_unit: it.price_unit ? String(it.price_unit).slice(0, 50) : null,
+      notes: it.notes ? String(it.notes).slice(0, 500) : null,
+    }))
+
+  if (cleanItems.length === 0) {
+    return res.status(400).json({ error: 'No valid items provided.' })
+  }
+
+  try {
+    // Create RFQ
+    const { data: rfq, error: rfqErr } = await supabase
+      .from('rfq_requests')
+      .insert({
+        requester_user_id: user.id,
+        project_name: String(project_name).trim().slice(0, 200),
+        delivery_county: String(delivery_county).trim().slice(0, 100),
+        delivery_date: delivery_date ?? null,
+        total_budget_kes: total_budget_kes ? Number(total_budget_kes) : null,
+        notes: notes ? String(notes).slice(0, 2000) : null,
+        status: 'sent',
+      })
+      .select('*')
+      .single()
+
+    if (rfqErr) throw rfqErr
+
+    // Insert line items
+    const { error: itemsErr } = await supabase
+      .from('rfq_items')
+      .insert(cleanItems.map(it => ({ rfq_id: rfq.id, ...it })))
+
+    if (itemsErr) throw itemsErr
+
+    res.status(201).json({ rfq })
+  } catch (err) {
+    console.error('RFQ create error:', err)
+    res.status(500).json({ error: err.message ?? 'Internal server error' })
+  }
+})
+
+// GET /api/rfq — list RFQs for the authenticated user (requester view)
+app.get('/api/rfq', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  try {
+    const { data, error } = await supabase
+      .from('rfq_requests')
+      .select(`
+        id, project_name, delivery_county, delivery_date, total_budget_kes, status, notes, created_at,
+        rfq_items(id, plant_id, quantity, price_unit),
+        rfq_responses(id, status, total_quoted_kes, nursery_id, nurseries:nursery_id(name, slug))
+      `)
+      .eq('requester_user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    res.json({ rfqs: data ?? [] })
+  } catch (err) {
+    console.error('RFQ list error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// GET /api/rfq/:id — RFQ detail (requester or invited nursery)
+app.get('/api/rfq/:id', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  const rfqId = String(req.params.id)
+
+  try {
+    const { data: rfq, error } = await supabase
+      .from('rfq_requests')
+      .select(`
+        id, project_name, delivery_county, delivery_date, total_budget_kes, status, notes, created_at, requester_user_id,
+        rfq_items(id, plant_id, quantity, price_unit, notes, plants:plant_id(id, scientific_name, common_names, thumbnail_url)),
+        rfq_responses(
+          id, status, total_quoted_kes, valid_until, delivery_lead_days, notes,
+          nursery_id, nurseries:nursery_id(id, name, slug, county, is_verified),
+          rfq_response_items(id, plant_id, quantity_available, unit_price_kes, container_size, notes)
+        )
+      `)
+      .eq('id', rfqId)
+      .single()
+
+    if (error || !rfq) return res.status(404).json({ error: 'RFQ not found.' })
+
+    // Access check: requester or nursery that has a response row
+    const isRequester = rfq.requester_user_id === user.id
+    const nursery = await getNurseryForUser(user.id)
+    const isInvitedNursery = nursery && rfq.rfq_responses?.some(r => r.nursery_id === nursery.id)
+
+    if (!isRequester && !isInvitedNursery) {
+      return res.status(403).json({ error: 'Access denied.' })
+    }
+
+    res.json({ rfq })
+  } catch (err) {
+    console.error('RFQ detail error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// POST /api/rfq/:id/respond — nursery submits a quote response
+app.post('/api/rfq/:id/respond', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  const nursery = await getNurseryForUser(user.id)
+  if (!nursery) return res.status(403).json({ error: 'You must own an active nursery to submit quotes.' })
+
+  const rfqId = String(req.params.id)
+  const b = req.body ?? {}
+  const { total_quoted_kes, valid_until, delivery_lead_days, notes, response_items } = b
+
+  if (!total_quoted_kes || isNaN(Number(total_quoted_kes))) {
+    return res.status(400).json({ error: 'total_quoted_kes is required.' })
+  }
+
+  try {
+    // Verify RFQ exists and is in sent state
+    const { data: rfq, error: rfqErr } = await supabase
+      .from('rfq_requests')
+      .select('id, status')
+      .eq('id', rfqId)
+      .single()
+
+    if (rfqErr || !rfq) return res.status(404).json({ error: 'RFQ not found.' })
+    if (!['sent', 'quoted'].includes(rfq.status)) {
+      return res.status(400).json({ error: `Cannot respond to an RFQ with status '${rfq.status}'.` })
+    }
+
+    // Upsert response (nursery may update their quote)
+    const { data: response, error: respErr } = await supabase
+      .from('rfq_responses')
+      .upsert(
+        {
+          rfq_id: rfqId,
+          nursery_id: nursery.id,
+          status: 'quoted',
+          total_quoted_kes: Number(total_quoted_kes),
+          valid_until: valid_until ?? null,
+          delivery_lead_days: delivery_lead_days ? Math.floor(Number(delivery_lead_days)) : null,
+          notes: notes ? String(notes).slice(0, 2000) : null,
+        },
+        { onConflict: 'rfq_id,nursery_id' }
+      )
+      .select('id')
+      .single()
+
+    if (respErr) throw respErr
+
+    // Insert/replace line-item responses if provided
+    if (Array.isArray(response_items) && response_items.length > 0) {
+      // Delete old items for this response first
+      await supabase
+        .from('rfq_response_items')
+        .delete()
+        .eq('rfq_response_id', response.id)
+
+      const cleanRespItems = response_items
+        .filter(it => it?.plant_id && it?.unit_price_kes)
+        .map(it => ({
+          rfq_response_id: response.id,
+          plant_id: String(it.plant_id),
+          quantity_available: it.quantity_available ? Math.floor(Number(it.quantity_available)) : null,
+          unit_price_kes: Number(it.unit_price_kes),
+          container_size: it.container_size ? String(it.container_size).slice(0, 100) : null,
+          notes: it.notes ? String(it.notes).slice(0, 500) : null,
+        }))
+
+      if (cleanRespItems.length > 0) {
+        const { error: riErr } = await supabase
+          .from('rfq_response_items')
+          .insert(cleanRespItems)
+        if (riErr) throw riErr
+      }
+    }
+
+    // Update RFQ status to quoted
+    await supabase
+      .from('rfq_requests')
+      .update({ status: 'quoted', updated_at: new Date().toISOString() })
+      .eq('id', rfqId)
+      .eq('status', 'sent')  // only promote sent → quoted; leave already-quoted as is
+
+    res.status(201).json({ response_id: response.id })
+  } catch (err) {
+    console.error('RFQ respond error:', err)
+    res.status(500).json({ error: err.message ?? 'Internal server error' })
+  }
+})
+
+// PATCH /api/rfq/responses/:responseId — requester accepts/declines a response
+app.patch('/api/rfq/responses/:responseId', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  const responseId = String(req.params.responseId)
+  const b = req.body ?? {}
+  const { action } = b // 'accept' | 'decline'
+
+  if (!['accept', 'decline'].includes(action)) {
+    return res.status(400).json({ error: "action must be 'accept' or 'decline'." })
+  }
+
+  try {
+    // Fetch response + its parent RFQ
+    const { data: resp, error: respErr } = await supabase
+      .from('rfq_responses')
+      .select('id, rfq_id, status, rfq_requests:rfq_id(requester_user_id, status)')
+      .eq('id', responseId)
+      .single()
+
+    if (respErr || !resp) return res.status(404).json({ error: 'Response not found.' })
+
+    // Only the original requester can accept/decline
+    if (resp.rfq_requests?.requester_user_id !== user.id) {
+      return res.status(403).json({ error: 'Only the requester can accept or decline quotes.' })
+    }
+
+    const newStatus = action === 'accept' ? 'accepted' : 'declined'
+
+    const { error: updateErr } = await supabase
+      .from('rfq_responses')
+      .update({ status: newStatus })
+      .eq('id', responseId)
+
+    if (updateErr) throw updateErr
+
+    // If accepted, move the parent RFQ to accepted too
+    if (action === 'accept') {
+      await supabase
+        .from('rfq_requests')
+        .update({ status: 'accepted', updated_at: new Date().toISOString() })
+        .eq('id', resp.rfq_id)
+    }
+
+    res.json({ ok: true, status: newStatus })
+  } catch (err) {
+    console.error('RFQ accept/decline error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// GET /api/nursery/rfq — nursery sees incoming RFQs they have been invited to respond to
+// For Phase 8c: nurseries are sent RFQs that already have a response row for them,
+// OR discover open RFQs in their county (for a future "marketplace" tab).
+// For now: return RFQs where a response row exists for this nursery.
+app.get('/api/nursery/rfq', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  const nursery = await getNurseryForUser(user.id)
+  if (!nursery) return res.status(403).json({ error: 'No active nursery found for this account.' })
+
+  try {
+    const { data, error } = await supabase
+      .from('rfq_responses')
+      .select(`
+        id, status, total_quoted_kes, valid_until, delivery_lead_days, notes,
+        rfq_requests:rfq_id(
+          id, project_name, delivery_county, delivery_date, total_budget_kes, status, created_at,
+          rfq_items(id, plant_id, quantity, plants:plant_id(scientific_name, common_names))
+        )
+      `)
+      .eq('nursery_id', nursery.id)
+      .order('id', { ascending: false })
+
+    if (error) throw error
+    res.json({ nursery, rfqs: data ?? [] })
+  } catch (err) {
+    console.error('Nursery RFQ list error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// POST /api/nursery/rfq/:rfqId/invite — allow a requester to invite a specific nursery to quote
+// Creates a 'pending' response row so the nursery can see the RFQ
+app.post('/api/nursery/rfq/:rfqId/invite', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  const rfqId = String(req.params.rfqId)
+  const b = req.body ?? {}
+  const { nursery_id } = b
+
+  if (!nursery_id) return res.status(400).json({ error: 'nursery_id is required.' })
+
+  try {
+    // Verify the RFQ belongs to this user
+    const { data: rfq, error: rfqErr } = await supabase
+      .from('rfq_requests')
+      .select('id, requester_user_id, status')
+      .eq('id', rfqId)
+      .single()
+
+    if (rfqErr || !rfq) return res.status(404).json({ error: 'RFQ not found.' })
+    if (rfq.requester_user_id !== user.id) return res.status(403).json({ error: 'Access denied.' })
+    if (!['sent', 'quoted'].includes(rfq.status)) {
+      return res.status(400).json({ error: `Cannot invite nurseries to an RFQ with status '${rfq.status}'.` })
+    }
+
+    // Insert a pending response row (idempotent via upsert)
+    const { error: respErr } = await supabase
+      .from('rfq_responses')
+      .upsert(
+        { rfq_id: rfqId, nursery_id: String(nursery_id), status: 'pending', total_quoted_kes: 0 },
+        { onConflict: 'rfq_id,nursery_id', ignoreDuplicates: true }
+      )
+
+    if (respErr) throw respErr
+
+    res.status(201).json({ ok: true })
+  } catch (err) {
+    console.error('Nursery invite error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// =============================
 // START SERVER
 // =============================
 app.listen(PORT, () => {

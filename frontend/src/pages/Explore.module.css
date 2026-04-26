@@ -398,7 +398,6 @@
 
 .cardChatLink {
   display: inline-block;
-  margin-top: 8px;
   font-size: 0.8125rem;
   font-weight: 700;
   color: var(--color-accent);
@@ -406,6 +405,44 @@
   transition: color 0.12s;
 }
 .cardChatLink:hover { color: var(--color-primary); }
+
+.cardActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  flex-wrap: wrap;
+}
+
+.cardQuoteBtn {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.cardQuoteBtn:hover {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.cardQuoteBtnActive {
+  background: var(--color-primary);
+  color: #fff;
+}
+.cardQuoteBtnActive:hover {
+  background: #0e3e3e;
+  border-color: #0e3e3e;
+}
 
 /* ── SKELETON ── */
 .skeleton {

@@ -11,6 +11,10 @@ import Nurseries from './pages/Nurseries'
 import NurseryDetail from './pages/NurseryDetail'
 import NurserySignup from './pages/NurserySignup'
 import NurseryDashboard from './pages/NurseryDashboard'
+import NurseryRFQs from './pages/NurseryRFQs'
+import RFQNew from './pages/RFQNew'
+import RFQList from './pages/RFQList'
+import RFQDetail from './pages/RFQDetail'
 import Curation from './pages/admin/Curation'
 
 export default function App() {
@@ -45,6 +49,38 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <NurseryDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/nursery/rfq"
+            element={
+              <ProtectedRoute>
+                <NurseryRFQs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rfq/new"
+            element={
+              <ProtectedRoute>
+                <RFQNew />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rfq/my"
+            element={
+              <ProtectedRoute>
+                <RFQList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rfq/:id"
+            element={
+              <ProtectedRoute>
+                <RFQDetail />
               </ProtectedRoute>
             }
           />
