@@ -210,9 +210,7 @@ export default function ProfessionalSignup() {
                   >
                     <option value="">Select type…</option>
                     {PRO_TYPES.filter(t => t.slug).map(t => (
-                      <option key={t.slug} value={t.slug}>
-                        {t.icon} {t.label}
-                      </option>
+                      <option key={t.slug} value={t.slug}>{t.label}</option>
                     ))}
                   </select>
                 </div>

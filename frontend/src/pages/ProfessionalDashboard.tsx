@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import styles from './Professionals.module.css'
-import { PRO_TYPE_LABELS, PRO_TYPE_ICONS } from './Professionals'
+import { PRO_TYPE_LABELS, ProTypeIcon } from './Professionals'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
 
@@ -147,7 +147,6 @@ export default function ProfessionalDashboard() {
   if (authLoading || loading) return <div className={styles.loadingPage}>Loading dashboard…</div>
   if (!pro) return null
 
-  const icon = PRO_TYPE_ICONS[pro.professional_type] ?? '🌿'
   const typeLabel = PRO_TYPE_LABELS[pro.professional_type] ?? pro.professional_type.replace(/_/g, ' ')
 
   return (
@@ -168,8 +167,8 @@ export default function ProfessionalDashboard() {
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-          <div className={styles.profileAvatarPlaceholder} style={{ width: 56, height: 56, fontSize: '1.6rem' }}>
-            {icon}
+          <div className={styles.profileAvatarPlaceholder} style={{ width: 56, height: 56 }}>
+            <ProTypeIcon type={pro.professional_type} size={26} />
           </div>
           <div>
             <h1 style={{ font: 'inherit', fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-primary)', margin: '0 0 3px' }}>

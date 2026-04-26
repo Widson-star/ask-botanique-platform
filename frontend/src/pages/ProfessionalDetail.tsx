@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import styles from './Professionals.module.css'
-import { PRO_TYPE_LABELS, PRO_TYPE_ICONS } from './Professionals'
+import { PRO_TYPE_LABELS, ProTypeIcon } from './Professionals'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
 
@@ -61,7 +61,6 @@ export default function ProfessionalDetail() {
     )
   }
 
-  const icon = PRO_TYPE_ICONS[pro.professional_type] ?? '🌿'
   const typeLabel = PRO_TYPE_LABELS[pro.professional_type] ?? pro.professional_type.replace(/_/g, ' ')
   const waLink = pro.whatsapp
     ? `https://wa.me/${pro.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi ${pro.business_name}, I found your profile on Ask Botanique and would like to enquire about your services.`)}`
@@ -78,7 +77,9 @@ export default function ProfessionalDetail() {
           {pro.profile_image_url ? (
             <img src={pro.profile_image_url} alt={pro.business_name} className={styles.profileAvatar} />
           ) : (
-            <div className={styles.profileAvatarPlaceholder}>{icon}</div>
+            <div className={styles.profileAvatarPlaceholder}>
+              <ProTypeIcon type={pro.professional_type} size={36} />
+            </div>
           )}
           <div className={styles.profileHeaderText}>
             <h1 className={styles.profileName}>

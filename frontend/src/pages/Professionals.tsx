@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import {
+  LayoutGrid, Compass, PenTool, Sprout, Flower2,
+  Scissors, Droplets, ShieldCheck, HardHat, type LucideIcon,
+} from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import styles from './Professionals.module.css'
 
@@ -10,25 +14,39 @@ const KENYAN_COUNTIES = [
   'Uasin Gishu','Laikipia','Nyandarua','Kirinyaga','Muranga','Embu','Tharaka-Nithi',
 ]
 
-export const PRO_TYPES = [
-  { slug: '',                    label: 'All professionals',   icon: '🌿' },
-  { slug: 'landscape_architect', label: 'Landscape Architects', icon: '🏛️' },
-  { slug: 'landscape_designer',  label: 'Landscape Designers',  icon: '🎨' },
-  { slug: 'horticulturist',      label: 'Horticulturists',       icon: '🌱' },
-  { slug: 'florist',             label: 'Florists',              icon: '💐' },
-  { slug: 'gardener',            label: 'Gardeners',             icon: '🌾' },
-  { slug: 'irrigation',          label: 'Irrigation',            icon: '💧' },
-  { slug: 'pest_control',        label: 'Pest Control',          icon: '🛡️' },
-  { slug: 'garden_contractor',   label: 'Garden Contractors',    icon: '🔨' },
+export const PRO_TYPES: { slug: string; label: string; Icon: LucideIcon }[] = [
+  { slug: '',                    label: 'All professionals',    Icon: LayoutGrid  },
+  { slug: 'landscape_architect', label: 'Landscape Architects', Icon: Compass     },
+  { slug: 'landscape_designer',  label: 'Landscape Designers',  Icon: PenTool     },
+  { slug: 'horticulturist',      label: 'Horticulturists',      Icon: Sprout      },
+  { slug: 'florist',             label: 'Florists',             Icon: Flower2     },
+  { slug: 'gardener',            label: 'Gardeners',            Icon: Scissors    },
+  { slug: 'irrigation',          label: 'Irrigation',           Icon: Droplets    },
+  { slug: 'pest_control',        label: 'Pest Control',         Icon: ShieldCheck },
+  { slug: 'garden_contractor',   label: 'Garden Contractors',   Icon: HardHat     },
 ]
 
 export const PRO_TYPE_LABELS: Record<string, string> = Object.fromEntries(
   PRO_TYPES.filter(t => t.slug).map(t => [t.slug, t.label])
 )
 
-export const PRO_TYPE_ICONS: Record<string, string> = Object.fromEntries(
-  PRO_TYPES.filter(t => t.slug).map(t => [t.slug, t.icon])
+export const PRO_TYPE_ICON_MAP: Record<string, LucideIcon> = Object.fromEntries(
+  PRO_TYPES.filter(t => t.slug).map(t => [t.slug, t.Icon])
 )
+
+/** Renders the correct Lucide icon for a professional_type slug */
+export function ProTypeIcon({
+  type,
+  size = 22,
+  color = 'var(--color-primary)',
+}: {
+  type: string
+  size?: number
+  color?: string
+}) {
+  const Icon = PRO_TYPE_ICON_MAP[type] ?? Sprout
+  return <Icon size={size} color={color} strokeWidth={1.8} />
+}
 
 interface ProCard {
   id: string
@@ -144,7 +162,7 @@ export default function Professionals() {
               className={`${styles.typeChip} ${type === t.slug ? styles.typeChipActive : ''}`}
               onClick={() => setType(t.slug)}
             >
-              <span className={styles.typeIcon}>{t.icon}</span>
+              <t.Icon size={15} strokeWidth={2} />
               {t.label}
             </button>
           ))}
@@ -184,7 +202,6 @@ export default function Professionals() {
 }
 
 function ProCard({ pro }: { pro: ProCard }) {
-  const icon = PRO_TYPE_ICONS[pro.professional_type] ?? '🌿'
   const typeLabel = PRO_TYPE_LABELS[pro.professional_type] ?? pro.professional_type.replace(/_/g, ' ')
   const counties = pro.counties_served?.slice(0, 3).join(', ') ?? 'Location not set'
   const waLink = pro.whatsapp
@@ -197,7 +214,9 @@ function ProCard({ pro }: { pro: ProCard }) {
         {pro.profile_image_url ? (
           <img src={pro.profile_image_url} alt={pro.business_name} className={styles.proAvatar} />
         ) : (
-          <div className={styles.proAvatarPlaceholder}>{icon}</div>
+          <div className={styles.proAvatarPlaceholder}>
+            <ProTypeIcon type={pro.professional_type} size={24} />
+          </div>
         )}
         <div className={styles.proCardMeta}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
