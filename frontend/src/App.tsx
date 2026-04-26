@@ -12,6 +12,10 @@ import NurseryDetail from './pages/NurseryDetail'
 import NurserySignup from './pages/NurserySignup'
 import NurseryDashboard from './pages/NurseryDashboard'
 import NurseryRFQs from './pages/NurseryRFQs'
+import Professionals from './pages/Professionals'
+import ProfessionalDetail from './pages/ProfessionalDetail'
+import ProfessionalSignup from './pages/ProfessionalSignup'
+import ProfessionalDashboard from './pages/ProfessionalDashboard'
 import RFQNew from './pages/RFQNew'
 import RFQList from './pages/RFQList'
 import RFQDetail from './pages/RFQDetail'
@@ -36,6 +40,24 @@ export default function App() {
           />
           <Route path="/nurseries" element={<Nurseries />} />
           <Route path="/nurseries/:slug" element={<NurseryDetail />} />
+          <Route path="/professionals" element={<Professionals />} />
+          <Route path="/professionals/:slug" element={<ProfessionalDetail />} />
+          <Route
+            path="/pro/signup"
+            element={
+              <ProtectedRoute>
+                <ProfessionalSignup />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pro/dashboard"
+            element={
+              <ProtectedRoute>
+                <ProfessionalDashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/nursery/signup"
             element={

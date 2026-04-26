@@ -1339,6 +1339,218 @@ app.post('/api/nursery/rfq/:rfqId/invite', async (req, res) => {
 })
 
 // =============================
+// PROFESSIONALS DIRECTORY
+// =============================
+
+const PRO_TYPES = [
+  'landscape_architect',
+  'landscape_designer',
+  'gardener',
+  'pest_control',
+  'irrigation',
+  'garden_contractor',
+  'florist',
+  'horticulturist',
+]
+
+// GET /api/professionals — public directory listing
+// ?q=&type=florist&county=Nairobi&limit=24&offset=0
+app.get('/api/professionals', async (req, res) => {
+  const { q, type, county, limit: rawLimit = '24', offset: rawOffset = '0' } = req.query
+  const limit = Math.min(Math.max(parseInt(rawLimit, 10) || 24, 1), 60)
+  const offset = Math.max(parseInt(rawOffset, 10) || 0, 0)
+
+  try {
+    let query = supabase
+      .from('professionals')
+      .select(
+        'id, business_name, slug, professional_type, bio, counties_served, specialties, years_experience, profile_image_url, certifications, min_project_kes, is_verified, phone, whatsapp',
+        { count: 'exact' }
+      )
+      .eq('is_active', true)
+
+    if (type && PRO_TYPES.includes(String(type))) {
+      query = query.eq('professional_type', String(type))
+    }
+
+    if (q) {
+      const safe = String(q).replace(/[^a-zA-Z0-9 '\-]/g, '').slice(0, 100)
+      query = query.or(`business_name.ilike.%${safe}%,bio.ilike.%${safe}%`)
+    }
+
+    if (county) {
+      query = query.contains('counties_served', [String(county).trim()])
+    }
+
+    query = query
+      .order('is_verified', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    const { data, error, count } = await query
+    if (error) throw error
+
+    res.json({ professionals: data ?? [], total: count ?? 0 })
+  } catch (err) {
+    console.error('Professionals list error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// GET /api/professionals/me — own professional profile (auth required)
+app.get('/api/professionals/me', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  try {
+    const { data, error } = await supabase
+      .from('professionals')
+      .select('*')
+      .eq('user_id', user.id)
+      .single()
+
+    if (error?.code === 'PGRST116') return res.json({ professional: null })
+    if (error) throw error
+
+    res.json({ professional: data })
+  } catch (err) {
+    console.error('Professional me error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// POST /api/professionals — create professional profile (auth required)
+app.post('/api/professionals', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  // Check no existing profile
+  const { data: existing } = await supabase
+    .from('professionals')
+    .select('id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (existing) return res.status(409).json({ error: 'You already have a professional profile. Use PATCH to update it.' })
+
+  const b = req.body ?? {}
+  const { business_name, professional_type, bio, phone, whatsapp, email, website,
+          counties_served, specialties, years_experience, certifications, min_project_kes } = b
+
+  if (!business_name?.trim()) return res.status(400).json({ error: 'business_name is required.' })
+  if (!professional_type || !PRO_TYPES.includes(professional_type)) {
+    return res.status(400).json({ error: `professional_type must be one of: ${PRO_TYPES.join(', ')}` })
+  }
+  if (!Array.isArray(counties_served) || counties_served.length === 0) {
+    return res.status(400).json({ error: 'At least one county is required.' })
+  }
+
+  // Generate unique slug
+  let baseSlug = slugify(business_name.trim())
+  let slug = baseSlug
+  for (let n = 1; n <= 50; n++) {
+    const { data: ex } = await supabase.from('professionals').select('id').eq('slug', slug).maybeSingle()
+    if (!ex) break
+    slug = `${baseSlug}-${n}`
+    if (n === 50) { slug = `${baseSlug}-${Date.now().toString(36)}`; break }
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('professionals')
+      .insert({
+        user_id: user.id,
+        business_name: String(business_name).trim().slice(0, 200),
+        slug,
+        professional_type: String(professional_type),
+        bio: bio ? String(bio).slice(0, 2000) : null,
+        phone: phone ? String(phone).slice(0, 30) : null,
+        whatsapp: whatsapp ? String(whatsapp).slice(0, 30) : null,
+        email: email ? String(email).slice(0, 200) : null,
+        website: website ? String(website).slice(0, 300) : null,
+        counties_served: counties_served.map(c => String(c).trim()).filter(Boolean).slice(0, 20),
+        specialties: Array.isArray(specialties)
+          ? specialties.map(s => String(s).trim()).filter(Boolean).slice(0, 20)
+          : [],
+        years_experience: years_experience ? Math.min(Math.max(parseInt(years_experience, 10) || 0, 0), 80) : null,
+        certifications: Array.isArray(certifications)
+          ? certifications.map(c => String(c).trim()).filter(Boolean).slice(0, 10)
+          : [],
+        min_project_kes: min_project_kes ? Math.max(parseInt(min_project_kes, 10) || 0, 0) : null,
+        is_verified: false,
+        is_active: true,
+      })
+      .select('*')
+      .single()
+
+    if (error) throw error
+    res.status(201).json({ professional: data })
+  } catch (err) {
+    console.error('Professional create error:', err)
+    res.status(500).json({ error: err.message ?? 'Internal server error' })
+  }
+})
+
+// PATCH /api/professionals/me — update own professional profile
+app.patch('/api/professionals/me', async (req, res) => {
+  const user = await getAuthUser(req)
+  if (!user) return res.status(401).json({ error: 'Authentication required.' })
+
+  const b = req.body ?? {}
+  const allowed = ['bio','phone','whatsapp','email','website','counties_served','specialties','years_experience','certifications','min_project_kes','is_active']
+  const patch = {}
+
+  if (b.bio !== undefined) patch.bio = b.bio ? String(b.bio).slice(0, 2000) : null
+  if (b.phone !== undefined) patch.phone = b.phone ? String(b.phone).slice(0, 30) : null
+  if (b.whatsapp !== undefined) patch.whatsapp = b.whatsapp ? String(b.whatsapp).slice(0, 30) : null
+  if (b.email !== undefined) patch.email = b.email ? String(b.email).slice(0, 200) : null
+  if (b.website !== undefined) patch.website = b.website ? String(b.website).slice(0, 300) : null
+  if (Array.isArray(b.counties_served)) patch.counties_served = b.counties_served.map(c => String(c).trim()).filter(Boolean).slice(0, 20)
+  if (Array.isArray(b.specialties)) patch.specialties = b.specialties.map(s => String(s).trim()).filter(Boolean).slice(0, 20)
+  if (b.years_experience !== undefined) patch.years_experience = b.years_experience ? Math.min(Math.max(parseInt(b.years_experience, 10) || 0, 0), 80) : null
+  if (Array.isArray(b.certifications)) patch.certifications = b.certifications.map(c => String(c).trim()).filter(Boolean).slice(0, 10)
+  if (b.min_project_kes !== undefined) patch.min_project_kes = b.min_project_kes ? Math.max(parseInt(b.min_project_kes, 10) || 0, 0) : null
+  if (typeof b.is_active === 'boolean') patch.is_active = b.is_active
+
+  if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'No updatable fields provided.' })
+
+  try {
+    const { data, error } = await supabase
+      .from('professionals')
+      .update(patch)
+      .eq('user_id', user.id)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    res.json({ professional: data })
+  } catch (err) {
+    console.error('Professional update error:', err)
+    res.status(500).json({ error: err.message ?? 'Internal server error' })
+  }
+})
+
+// GET /api/professionals/:slug — public profile detail
+app.get('/api/professionals/:slug', async (req, res) => {
+  const slug = String(req.params.slug || '').slice(0, 80)
+  if (!slug) return res.status(400).json({ error: 'slug required' })
+
+  try {
+    const { data, error } = await supabase
+      .from('professionals')
+      .select('id, business_name, slug, professional_type, bio, counties_served, specialties, years_experience, profile_image_url, portfolio_urls, certifications, min_project_kes, is_verified, phone, whatsapp, email, website, created_at')
+      .eq('slug', slug)
+      .eq('is_active', true)
+      .single()
+
+    if (error || !data) return res.status(404).json({ error: 'Professional not found.' })
+    res.json({ professional: data })
+  } catch (err) {
+    console.error('Professional detail error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// =============================
 // START SERVER
 // =============================
 app.listen(PORT, () => {
